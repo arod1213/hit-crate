@@ -1,0 +1,31 @@
+name: PUSH
+
+on:
+  push:
+    branches:
+      - main  # Trigger on commits to the main branch
+
+jobs:
+  lint:
+    name: Lint with Ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # Checkout code
+      - name: Run Linter (Ruff)
+        run: ruff check .  # Run ruff linter
+
+  format:
+    name: Format with Autoflake
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # Checkout code
+      - name: Run Formatter (Autoflake)
+        run: autoflake --in-place --remove-all-unused-imports --ignore-init-module-imports .  # Format code
+
+  auto-stage:
+    name: Auto Stage Changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # Checkout code
+      - name: Git Add After Formatting
+        run: git add .  # Automatically stage the changes after autoflake formatting
