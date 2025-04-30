@@ -1,4 +1,5 @@
 from pathlib import Path
+import threading
 from typing import Optional
 
 from sqlmodel import Session
@@ -23,7 +24,12 @@ class DirectoryService:
     def create(self, path: Path):
         new_dir = self.repo.create(path)
         if new_dir is not None:
-            scan_dir(path, self.session)
+            new_thread = threading.Thread(
+                target=scan_dir,
+                args=(path,),
+                daemon=True
+            )
+            new_thread.start()
 
     def delete(self, path: str):
         return self.repo.delete(path)

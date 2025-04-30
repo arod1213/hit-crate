@@ -7,7 +7,7 @@ from app.backend.watcher import run_initial_scan, watchdog
 from app.frontend.main import BrowserApp
 
 
-@watchdog
+# @watchdog
 def main():
     watcher_thread = threading.Thread(target=run_initial_scan, daemon=True)
     watcher_thread.start()

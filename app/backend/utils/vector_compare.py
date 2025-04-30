@@ -1,7 +1,9 @@
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Sequence
 
 import numpy as np
+from itertools import repeat
 
 from app.backend.models import Sample
 from app.backend.utils.to_bytes import bytes_to_array
@@ -21,49 +23,30 @@ def sample_to_class(x: Sample):
     return AudioMetadata(x.name, mfcc, spectral_centroid)
 
 
+def score_sample(x: AudioMetadata, sample: Sample):
+    y = sample_to_class(sample)
+
+    if x.mfcc.shape == y.mfcc.shape:
+        if (x.mfcc == y.mfcc).all():
+            return (sample, 1.0)
+
+    score = similarity_score(x, y)
+
+    if score > 0.9:
+        return (sample, score)
+    return None
+
+
 def sort_by_freq(x: Sample, samples: Sequence[Sample]) -> Sequence[Sample]:
-    scored_matches = []
     match = sample_to_class(x)
-    for sample in samples:
-        if x == sample:
-            scored_matches.append((sample, 1))
-            continue
 
-        y = sample_to_class(sample)
-        score = similarity_score(match, y)
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = list(filter(None, executor.map(score_sample, repeat(match), samples)))
 
-        if score > 0.9:
-            scored_matches.append((sample, score))
-
-    scored_matches.sort(key=lambda item: item[1], reverse=True)
-    return [sample for sample, _ in scored_matches]
+    results.sort(key=lambda item: item[1], reverse=True)
+    return [sample for sample, _ in results]
 
 
 def similarity_score(x: AudioMetadata, y: AudioMetadata):
     mfcc = dtw_similarity(x.mfcc, y.mfcc)
-    # print(f"{x.name} to {y.name}")
-    # print(f"MFFC {mfcc}")
-    # print(f"FUND {fundamental}")
-    # print(f"Roloff {rolloff}")
-    #
-    # weights = [
-    #     (mfcc, 2),
-    #     (fundamental, 1),
-    #     (rolloff, 2),
-    # ]
-    #
-    # if fundamental == 0:
-    #     weights = [
-    #         (mfcc, 2),
-    #         (fundamental, 0.2),
-    #         (rolloff, 2),
-    #     ]
-
-    # score_sum = 0
-    # weight_sum = sum(weight for _, weight in weights)
-    #
-    # for score, weight in weights:
-    #     weight /= weight_sum
-    #     score_sum += score * weight
-
     return mfcc

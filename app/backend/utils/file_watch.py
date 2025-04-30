@@ -9,23 +9,25 @@ from sqlmodel import Session, select
 from app.backend.models import Sample
 from app.backend.schemas import AudioFormat
 from app.backend.services.sample_service import SampleService
+from app.backend.db import engine
 
 
-def scan_dir(path: Path, session: Session):
-    existing_samples = {
-        sample.path: sample
-        for sample in session.exec(
-            select(Sample).where(Sample.parent_path == str(path))
-        ).all()
-    }
-    dir_files = get_valid_files(path)
+def scan_dir(path: Path):
+    with Session(engine, expire_on_commit=False) as session:
+        existing_samples = {
+            sample.path: sample
+            for sample in session.exec(
+                select(Sample).where(Sample.parent_path == str(path))
+            ).all()
+        }
+        dir_files = get_valid_files(path)
 
-    for file in dir_files:
-        if not file.is_file():
-            continue
-        matching_sample = existing_samples.get(str(file))
-        check_file(file, matching_sample, parent_path=path, session=session)
-    pass
+        for file in dir_files:
+            if not file.is_file():
+                continue
+            matching_sample = existing_samples.get(str(file))
+            check_file(file, matching_sample, parent_path=path, session=session)
+        pass
 
 
 def check_file(

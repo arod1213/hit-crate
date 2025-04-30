@@ -6,14 +6,18 @@ from watchdog.events import FileSystemEventHandler
 from app.backend.services import DirectoryService, SampleService
 from app.backend.utils.file_watch import scan_dir
 
+from concurrent.futures import ThreadPoolExecutor
 from .db import engine
 
 
 def run_initial_scan():
     with Session(engine, expire_on_commit=False) as session:
         dirs = DirectoryService(session).query_directories()
-        for d in dirs:
-            scan_dir(Path(d.path), session)
+        paths = [Path(d.path) for d in dirs]
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        for path in paths:
+            executor.submit(scan_dir, path)
 
 
 class Handler(FileSystemEventHandler):
