@@ -1,22 +1,18 @@
-import sys
-
-from PyQt6.QtCore import pyqtSignal
-from app.backend.db import engine
 from pathlib import Path
+
+from app.backend.db import engine
+from app.backend.services import DirectoryService
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QPushButton,
     QFileDialog,
-    QWidget,
+    QPushButton,
 )
 from sqlmodel import Session
-
-from app.backend.services import DirectoryService
 
 
 class OpenDir(QPushButton):
     directory_added = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.initUI()

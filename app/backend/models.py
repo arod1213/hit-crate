@@ -1,38 +1,64 @@
 from __future__ import annotations
 
-import datetime
-from typing import Optional, Sequence
+from datetime import datetime
+from typing import List, Optional
 
-from sqlalchemy.types import BLOB
-from sqlmodel import Column, Field, Relationship, SQLModel
+from sqlalchemy import (
+    BLOB,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+)
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .schemas import AudioFormat
 
-
-class Directory(SQLModel, table=True):
-    path: str = Field(primary_key=True)
-
-    # relationship
-    samples: Sequence['Sample'] = Relationship(back_populates="parent_directory")
+Base = declarative_base()
 
 
-class Sample(SQLModel, table=True):
-    path: str = Field(primary_key=True)
-    modified_at: datetime.datetime
-    duration: Optional[float] = None
-    format: AudioFormat
-    name: str
-    hash: str
-    sample_rate: int
-    rms: float
-    stereo_width: float  # value between 0 and 200
-    mfcc: bytes = Field(default=None, sa_column=Column(BLOB))
-    spectral_centroid: float
+class Directory(Base):
+    __tablename__ = "directory"
 
-    # relationship
-    parent_path: str = Field(foreign_key="directory.path")
-    parent_directory: 'Directory' = Relationship(back_populates="samples")
+    path: Mapped[str] = mapped_column(String, primary_key=True)
 
+    # Relationship to Sample
+    samples: Mapped[List["Sample"]] = relationship(
+        "Sample", back_populates="parent_directory"
+    )
+
+
+class Sample(Base):
+    __tablename__ = "sample"
+
+    path: Mapped[str] = mapped_column(String, primary_key=True)
+    modified_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    duration: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    format: Mapped[AudioFormat] = mapped_column(
+        Enum(AudioFormat), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    hash: Mapped[str] = mapped_column(String, nullable=False)
+    sample_rate: Mapped[int] = mapped_column(Integer, nullable=False)
+    lufs: Mapped[float] = mapped_column(Float, nullable=False)
+    stereo_width: Mapped[float] = mapped_column(
+        Float, nullable=False
+    )  # value between 0 and 200
+    mfcc: Mapped[bytes] = mapped_column(BLOB, nullable=False)
+    spectral_centroid: Mapped[float] = mapped_column(Float, nullable=False)
+
+    # Foreign key to directory table
+    parent_path: Mapped[str] = mapped_column(
+        String, ForeignKey("directory.path")
+    )
+
+    # Relationship to Directory
+    parent_directory: Mapped["Directory"] = relationship(
+        "Directory", back_populates="samples"
+    )
 
 
 # class Tag(SQLModel, table=True):

@@ -76,6 +76,7 @@ QScrollBar:vertical {
 QScrollBar::handle:vertical {
     background: #B6B5B5;
     border-radius: 4px;
+    min-height: 15px;
 }
 
 QScrollBar::handle:vertical:hover {
@@ -85,4 +86,8 @@ QScrollBar::handle:vertical:hover {
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     background: none;
     height: 0px;
+}
+QSlider::handle:horizontal {
+    width: 20px;
+    height: 20px;
 }

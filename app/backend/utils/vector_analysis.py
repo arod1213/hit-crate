@@ -1,5 +1,5 @@
-import numpy as np
 import librosa
+import numpy as np
 
 
 def dtw_to_probability(dtw_distance, mean_distance=0, alpha=1):

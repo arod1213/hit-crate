@@ -21,18 +21,18 @@ class SampleSimilarInput:
 
 class SampleQueryInput(SQLModel):
     name: Optional[str] = None
-    path: Optional[Path] = None
     width: Optional[float] = None
     spectral_centroid: Optional[float] = None
 
 
 class SampleCreateInput(SQLModel):
     path: Path
+    parent_path: Path
     format: AudioFormat
     duration: Optional[float] = None
     hash: str
     sample_rate: int
-    rms: float
+    lufs: float
     stereo_width: float
     mfcc: bytes
     spectral_centroid: float
@@ -43,4 +43,4 @@ class SampleUpdateInput(SQLModel):
     duration: Optional[float] = None
     hash: Optional[str] = None
     sample_rate: Optional[int]
-    rms: Optional[float]
+    lufs: Optional[float]

@@ -25,7 +25,6 @@ def sort_by_freq(x: Sample, samples: Sequence[Sample]) -> Sequence[Sample]:
     scored_matches = []
     match = sample_to_class(x)
     for sample in samples:
-
         if x == sample:
             scored_matches.append((sample, 1))
             continue

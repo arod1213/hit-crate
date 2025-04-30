@@ -18,6 +18,8 @@ class StoreState:
     selected_sample: Optional[Sample] = None
     search_key: str = ""
     results: Sequence[Sample] | None = None
+    curr_page: int = 0
+    lufs_target: float = -25
 
 
 class Store:

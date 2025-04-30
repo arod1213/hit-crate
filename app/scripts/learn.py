@@ -5,7 +5,6 @@ import librosa
 import numpy as np
 from app.backend.schemas import AudioFormat
 from app.backend.utils.audio_freq import spectral_centroid
-from app.backend.utils.audio_width import get_stereo_width
 
 WATCH_DIR = Path.home() / "Desktop" / "Scan Test"
 FILE = Path.home() / "Desktop" / "Scan Test" / "WIDEST.wav"

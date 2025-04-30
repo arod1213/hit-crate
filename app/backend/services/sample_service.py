@@ -6,21 +6,22 @@ from sqlmodel import Session
 from app.backend.repos.directory_repo import DirectoryRepo
 from app.backend.utils.to_bytes import array_to_bytes
 
-from .models import Sample
-from .repos.sample_repo import SampleRepo
-from .schemas import (
+from ..models import Sample
+from ..repos.sample_repo import SampleRepo
+from ..schemas import (
     SampleCreateInput,
     SampleQueryInput,
     SampleSimilarInput,
     SampleUpdateInput,
 )
-from .utils.audio_core import AudioMeta
-from .utils.audio_detail import AudioDetail
+from ..utils.audio_core import AudioMeta
+from ..utils.audio_detail import AudioDetail
 
 
 class SampleService:
     def __init__(self, db: Session):
         self.repo = SampleRepo(db)
+        self.directory_repo = DirectoryRepo(db)
 
     def query(self, path: Path):
         return self.repo.query(path)
@@ -32,9 +33,12 @@ class SampleService:
     def query_similar(self, path: Path, input: SampleSimilarInput):
         return self.repo.query_similar(path, input)
 
-    def create(self, path: Path) -> Sample:
+    def create(self, path: Path, parent_path: Path) -> Sample:
         if not path.is_file():
             raise IsADirectoryError(f"path: {path} is a directory")
+        parent_dir = self.directory_repo.query(parent_path)
+        if not parent_dir:
+            raise ValueError(f"{parent_path} could not be found")
 
         metadata = AudioMeta(path)
         if metadata.format is None:  # if unsupported
@@ -44,11 +48,12 @@ class SampleService:
         return self.repo.create(
             input=SampleCreateInput(
                 path=path,
+                parent_path=parent_path,
                 format=metadata.format,
                 duration=metadata.duration,
                 sample_rate=metadata.sample_rate,
                 hash=metadata.hash,
-                rms=detail.rms,
+                lufs=detail.lufs,
                 stereo_width=detail.stereo_width,
                 mfcc=array_to_bytes(detail.mfcc),
                 spectral_centroid=detail.spectral_centroid,
@@ -70,7 +75,7 @@ class SampleService:
             format=metadata.format,
             hash=metadata.hash,
             sample_rate=metadata.sample_rate,
-            rms=detail.rms,
+            lufs=detail.lufs,
         )
         return self.repo.update(path, input)
 
@@ -86,15 +91,4 @@ class SampleService:
         return self.repo.delete(path)
 
 
-class DirectoryService:
-    def __init__(self, db: Session):
-        self.repo = DirectoryRepo(db)
 
-    def query_directories(self):
-        return self.repo.query_directories()
-
-    def create(self, path: Path):
-        return self.repo.create(path)
-
-    def delete(self, path: str):
-        return self.repo.delete(path)

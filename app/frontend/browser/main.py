@@ -1,6 +1,8 @@
 from typing import Optional
 
 import numpy as np
+from app.frontend.search.actions.find_all import SearchAllTrigger
+from app.frontend.search.slider import Slider
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -8,9 +10,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from app.frontend.search.slider import Slider
-from app.frontend.settings.open_dir import OpenDir
 
 from ..audio_engine import AudioEngine
 from ..results.info import Info
@@ -31,6 +30,7 @@ class Browser(QWidget):
 
         main_layout = QVBoxLayout(self)
 
+        SearchAllTrigger()
         search_widget = QWidget()
         search_layout = QHBoxLayout(search_widget)
         search_input = SearchInput()
@@ -56,9 +56,11 @@ class Browser(QWidget):
         results = Results()
         main_layout.addWidget(results)
 
+        # initialize results
+        self.store.set_state("search_key", "")
+
         self.space_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
         self.space_shortcut.activated.connect(self.play_sample)
-
 
     def play_sample(self):
         sample = self.store._state.selected_sample

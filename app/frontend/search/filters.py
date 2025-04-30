@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from app.frontend.settings.toggle_view import ToggleView
 from app.frontend.store import Store
 
 from .filter_button import FilterButton
@@ -32,3 +33,6 @@ class Filters(QWidget):
             icon="app/frontend/assets/freq-icon.svg",
         )
         layout.addWidget(self.freq_button)
+
+        toggle_view = ToggleView()
+        layout.addWidget(toggle_view)

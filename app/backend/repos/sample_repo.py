@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 from pathlib import Path
 from typing import Sequence
-import math
 
 from sqlalchemy import func, nullslast
 from sqlmodel import Session, select
@@ -26,37 +25,37 @@ class SampleRepo:
             select(Sample).where(Sample.path == str(path))
         ).first()
 
+    def query_by_parent(self, path: Path):
+        return self.session.exec(
+            select(Sample).where(Sample.parent_path == str(path))
+        ).all()
+
     def query_samples(self, input: SampleQueryInput) -> Sequence[Sample]:
         conditions = []
         order_conditions = []
 
-        if input.path:
-            conditions.append(Sample.path == input.path)
         if input.width:
             conditions.append(Sample.stereo_width is not None)
             conditions.append(
-                func.abs(Sample.stereo_width - input.width)
-                < 5  # type: ignore[arg-type]
+                func.abs(Sample.stereo_width - input.width) < 5  # type: ignore[arg-type]
             )
         if input.spectral_centroid is not None:
             order_conditions.append(
                 nullslast(
-                    func.abs(
-                        Sample.spectral_centroid - input.spectral_centroid
-                    ).asc()  # type: ignore[arg-type]
+                    func.abs(Sample.spectral_centroid - input.spectral_centroid).asc()  # type: ignore[arg-type]
                 )
             )
-            conditions.append(
-                func.abs(
-                    func.log(Sample.spectral_centroid)
-                    - func.log(input.spectral_centroid)
-                )
-                < 0.3
-            )
+            # conditions.append(
+            #     func.abs(
+            #         func.log(Sample.spectral_centroid)
+            #         - func.log(input.spectral_centroid)
+            #     )
+            #     < 0.3
+            # )
             pass
         if input.name and input.name != "":
             conditions.append(
-                func.lower(Sample.path).like(f"%{input.name.lower()}%")
+                func.lower(Sample.name).like(f"%{input.name.lower()}%")
             )
 
         samples = self.session.exec(
@@ -80,18 +79,14 @@ class SampleRepo:
         conditions = []
         if found.stereo_width is not None and input.byWidth:
             conditions.append(Sample.stereo_width is not None)
-            conditions.append(
-                func.abs(Sample.stereo_width - found.stereo_width) < 8
-            )  # type: ignore[arg-type]
+            conditions.append(func.abs(Sample.stereo_width - found.stereo_width) < 8)  # type: ignore[arg-type]
 
         matches = self.session.exec(
             select(Sample)
             .where(*conditions)
             .order_by(
                 nullslast(
-                    func.abs(
-                        Sample.stereo_width - found.stereo_width
-                    ).asc()  # type: ignore[arg-type]
+                    func.abs(Sample.stereo_width - found.stereo_width).asc()  # type: ignore[arg-type]
                 )
             )
         ).all()
@@ -113,12 +108,13 @@ class SampleRepo:
         sample = Sample(
             name=input.path.stem,
             path=str(input.path),
+            parent_path=str(input.parent_path),
             modified_at=datetime.fromtimestamp(m_time_float),
             format=input.format,
             duration=input.duration,
             hash=input.hash,
             sample_rate=input.sample_rate,
-            rms=input.rms,
+            lufs=input.lufs,
             stereo_width=input.stereo_width,
             mfcc=input.mfcc,
             spectral_centroid=input.spectral_centroid,
@@ -141,8 +137,8 @@ class SampleRepo:
         if input.hash is not None:
             sample.hash = input.hash
             sample.duration = input.duration
-        if input.rms is not None:
-            sample.rms = input.rms
+        if input.lufs is not None:
+            sample.lufs = input.lufs
         if input.sample_rate is not None:
             sample.sample_rate = input.sample_rate
 

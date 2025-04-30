@@ -37,12 +37,16 @@ class Results(QWidget):
 
         self.setLayout(layout)
 
+        self.results_list.currentItemChanged.connect(self.select_sample)
+
         self.backslash_shortcut = QShortcut(
             QKeySequence(Qt.Key.Key_Backslash), self
         )
         self.backslash_shortcut.activated.connect(self.find_similar)
 
     def select_sample(self, item):
+        if item is None:
+            return
         file_data = item.data(Qt.ItemDataRole.UserRole)
         self.store.set_state("selected_sample", file_data)
 
@@ -55,6 +59,12 @@ class Results(QWidget):
             item = QListWidgetItem(file.name)
             item.setData(Qt.ItemDataRole.UserRole, file)
             self.results_list.addItem(item)
+
+    def reset_scrollbar(self):
+        scroll_bar = self.results_list.verticalScrollBar()
+        if scroll_bar is not None:
+            scroll_bar.setValue(0)
+        return
 
     def find_similar(self):
         sample = self.store._state.selected_sample
@@ -70,4 +80,6 @@ class Results(QWidget):
                 ),
             )
             self.store.set_state("results", data)
-            return data
+
+        self.reset_scrollbar()
+        return data

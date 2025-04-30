@@ -1,27 +1,34 @@
-from typing import Optional
-
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QHBoxLayout, QSlider
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSlider, QWidget
 
 from app.frontend.store import Store, StoreState
 
 
-class Slider(QSlider):
+class Slider(QWidget):
     def __init__(
         self,
     ):
-        super().__init__(orientation=Qt.Orientation.Horizontal)
+        super().__init__()
 
-        self.setMinimum(50)
-        self.setMaximum(5000)
+        layout = QHBoxLayout(self)
+        self.left_label = QLabel("dark")
+        layout.addWidget(self.left_label)
+
+        self.slider = QSlider(orientation=Qt.Orientation.Horizontal)
+        self.slider.setMinimum(35)
+        self.slider.setMaximum(8000)
+        layout.addWidget(self.slider)
+
+        self.left_label = QLabel("bright")
+        layout.addWidget(self.left_label)
 
         self.store = Store()
         self.store.subscribe("filters", self.set_state)
-        self.valueChanged.connect(self.update_store)
+        self.slider.sliderReleased.connect(self.update_store)
 
     def set_state(self, state: StoreState):
-        self.setValue(state.filters.spectral_centroid)
+        self.slider.setValue(state.filters.spectral_centroid)
 
     def update_store(self):
-        self.store.update_filters("spectral_centroid", self.value())
+        print(f"value is {self.slider.value}")
+        self.store.update_filters("spectral_centroid", self.slider.value())

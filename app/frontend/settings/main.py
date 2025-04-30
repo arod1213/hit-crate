@@ -1,3 +1,10 @@
+from pathlib import Path
+
+from app.backend.db import engine
+from app.backend.services import DirectoryService
+from app.frontend.settings.menu_button import MenuButton
+from app.frontend.settings.open_dir import OpenDir
+from app.frontend.settings.toggle_view import ToggleView
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
@@ -9,11 +16,6 @@ from PyQt6.QtWidgets import (
 )
 from sqlmodel import Session
 
-from app.backend.services import DirectoryService
-from app.frontend.settings.open_dir import OpenDir
-from app.backend.db import engine
-from pathlib import Path
-
 from ..store import Store
 
 
@@ -24,15 +26,19 @@ class Settings(QWidget):
         self.store = Store()
 
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        dir_sel = OpenDir()
-        dir_sel.directory_added.connect(self.refresh_ui)
+        back = ToggleView()
+        self.main_layout.addWidget(back)
 
-        self.main_layout.addWidget(dir_sel)
         self.setup_ui()
 
     def setup_ui(self):
+
+        dir_sel = OpenDir()
+        dir_sel.directory_added.connect(self.refresh_ui)
+        self.main_layout.addWidget(dir_sel)
+
         with Session(engine) as db_session:
             data = DirectoryService(db_session).query_directories()
             for dir in data:
@@ -41,15 +47,14 @@ class Settings(QWidget):
 
                 # Folder Icon
                 icon_label = QLabel()
-                icon = QIcon.fromTheme("folder")  # Uses system folder icon
+                icon = QIcon("app/frontend/assets/folder-icon")
                 icon_label.setPixmap(icon.pixmap(QSize(16, 16)))
 
                 # Directory Path
                 path_label = QLabel(text=f"{dir.path}")
 
                 # Delete Button
-                delete_button = QPushButton(text="delete")
-                delete_button.setFixedSize(60, 25)
+                delete_button = MenuButton(text="delete", icon="app/frontend/assets/close-icon.svg")
                 delete_button.clicked.connect(
                     lambda _, p=dir.path: self.delete_directory(p)
                 )
@@ -65,7 +70,9 @@ class Settings(QWidget):
     def refresh_ui(self):
         # Remove everything except the first widget (the OpenDir button)
         while self.main_layout.count() > 1:
-            item = self.main_layout.takeAt(1)  # Always remove the second item (index 1)
+            item = self.main_layout.takeAt(
+                1
+            )  # Always remove the second item (index 1)
             if item is None:
                 continue
             widget = item.widget()
@@ -84,4 +91,3 @@ class Settings(QWidget):
         with Session(engine) as db_session:
             DirectoryService(db_session).delete(path)
         self.refresh_ui()
-

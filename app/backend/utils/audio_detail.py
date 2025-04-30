@@ -5,9 +5,9 @@ import librosa
 import numpy as np
 import soundfile as sf
 
-from app.backend.utils.audio_gain import get_rms
+from app.backend.utils.audio_gain import get_lufs
 
-from .audio_freq import mfcc, pyin_fund, rolloff, spectral_centroid
+from .audio_freq import mfcc, spectral_centroid
 from .audio_width import get_stereo_width
 
 
@@ -34,12 +34,13 @@ class AudioDetail:
 
         self.name: str = path.stem
 
-        self.rms: float = get_rms(audio)
+        self.lufs: float = get_lufs(audio, sr)
 
-        self.mfcc: np.ndarray = mfcc(audio, sr)
-
-        S = spectral_centroid(audio, sr)
+        mel_spec = librosa.feature.melspectrogram(y=audio, sr=sr)
+        S = spectral_centroid(mel_spec)
         self.spectral_centroid = np.median(filter_nan(S))
+
+        self.mfcc = mfcc(audio, sr)
         # self.fundamental: np.ndarray = pyin_fund(audio, sr)
         # self.rolloff: np.ndarray = rolloff(audio, sr)
 

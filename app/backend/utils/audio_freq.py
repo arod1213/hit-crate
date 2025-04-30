@@ -23,6 +23,6 @@ def mfcc(audio: np.ndarray, sr: int | float):
     return data
 
 
-def spectral_centroid(audio: np.ndarray, sr: int | float):
-    data = librosa.feature.spectral_centroid(y=audio, sr=sr)
+def spectral_centroid(mel_spec: np.ndarray):
+    data = librosa.feature.spectral_centroid(S=mel_spec)
     return data[0]

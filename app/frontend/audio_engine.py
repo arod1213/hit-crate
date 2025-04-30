@@ -6,14 +6,17 @@ from typing import Optional
 import pygame
 
 from app.backend.models import Sample
+from app.frontend.store import Store
 
-from .utils.gain import db_to_target_rms
+from .utils.gain import amp_to_target_lufs
 
 
 class AudioEngine:
     pygame.mixer.init()
 
     def __init__(self):
+        self._store = Store()
+
         self.file_path: Path | None = None
         self.is_playing = False  # Add a boolean to track the playing status
         self.even_gain = True
@@ -23,6 +26,8 @@ class AudioEngine:
 
     def load_audio(self, sample: Sample):
         """Load the audio file."""
+        if self.is_playing:
+            self.stop()
         file_path = Path(sample.path)
         if file_path.exists():
             self.sample = sample
@@ -60,9 +65,10 @@ class AudioEngine:
             return
 
         if self.even_gain and self.sample:
-            rms = self.sample.rms
-            if rms:
-                target_gain = db_to_target_rms(rms)
+            lufs = self.sample.lufs
+            if lufs:
+                target_lufs = self._store._state.lufs_target
+                target_gain = amp_to_target_lufs(curr=lufs, target=target_lufs)
                 self.sound.set_volume(target_gain)
 
         self.channel = self.sound.play(loops=0)

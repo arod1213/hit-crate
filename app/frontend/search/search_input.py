@@ -4,11 +4,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlmodel import Session
 
-from app.backend.db import engine
-from app.backend.schemas import SampleQueryInput
-from app.backend.services import SampleService
 from app.frontend.store import Store
 
 
@@ -39,13 +35,3 @@ class SearchInput(QWidget):
 
     def search(self, text):
         self.store.set_state("search_key", text)
-
-        with Session(engine) as db_session:
-            data = SampleService(db_session).query_samples(
-                SampleQueryInput(
-                    name=text,
-                    spectral_centroid=self.store._state.filters.spectral_centroid,
-                )
-            )
-        self.store.set_state("results", data)
-        return data

@@ -2,10 +2,8 @@ from typing import Optional
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QFrame,
     QHBoxLayout,
     QLabel,
-    QVBoxLayout,
     QWidget,
 )
 
