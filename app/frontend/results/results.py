@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -39,6 +40,9 @@ class Results(QWidget):
 
         self.results_list.currentItemChanged.connect(self.select_sample)
 
+        self.store.subscribe("search_key", self.reset_scrollbar)
+        self.store.subscribe("spectral_centroid", self.reset_scrollbar)
+
         self.backslash_shortcut = QShortcut(
             QKeySequence(Qt.Key.Key_Backslash), self
         )
@@ -60,7 +64,7 @@ class Results(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, file)
             self.results_list.addItem(item)
 
-    def reset_scrollbar(self):
+    def reset_scrollbar(self, _: Optional[StoreState]):
         scroll_bar = self.results_list.verticalScrollBar()
         if scroll_bar is not None:
             scroll_bar.setValue(0)
@@ -81,5 +85,5 @@ class Results(QWidget):
             )
             self.store.set_state("results", data)
 
-        self.reset_scrollbar()
+        self.reset_scrollbar(None)
         return data

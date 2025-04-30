@@ -10,14 +10,14 @@ class SearchAllTrigger:
         self.store = Store()
 
         self.store.subscribe("search_key", self.trigger_search)
-        self.store.subscribe("filters", self.trigger_search)
+        self.store.subscribe("spectral_centroid", self.trigger_search)
 
     def trigger_search(self, state: StoreState):
         with Session(engine) as db_session:
             data = SampleService(db_session).query_samples(
                 SampleQueryInput(
                     name=state.search_key,
-                    spectral_centroid=self.store._state.filters.spectral_centroid,
+                    spectral_centroid=self.store._state.spectral_centroid,
                 )
             )
         self.store.set_state("results", data)

@@ -9,7 +9,6 @@ from app.backend.models import Sample
 class FilterOptions:
     by_width: bool = False
     by_freq: bool = True
-    spectral_centroid: int = 40
 
 
 @dataclass
@@ -17,6 +16,7 @@ class StoreState:
     filters: FilterOptions = field(default_factory=FilterOptions)
     selected_sample: Optional[Sample] = None
     search_key: str = ""
+    spectral_centroid: int = 40
     results: Sequence[Sample] | None = None
     curr_page: int = 0
     lufs_target: float = -25

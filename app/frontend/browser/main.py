@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 from app.frontend.search.actions.find_all import SearchAllTrigger
-from app.frontend.search.slider import Slider
+from app.frontend.components import Slider
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -48,13 +48,28 @@ class Browser(QWidget):
         waveform_layout.addWidget(waveform)
         main_layout.addWidget(waveform_container)
 
-        slider = Slider()
-        main_layout.addWidget(slider)
+        tonal_slider = Slider(
+            subscribe_to="spectral_centroid",
+            min_value=35,
+            max_value=8000,
+            text_left="dark",
+            text_right="bright",
+        )
+        main_layout.addWidget(tonal_slider)
 
         info = Info()
         main_layout.addWidget(info)
         results = Results()
         main_layout.addWidget(results)
+
+        output_slider = Slider(
+            subscribe_to="lufs_target",
+            min_value=-40,
+            max_value=-4,
+            text_left="quiet",
+            text_right="loud",
+        )
+        main_layout.addWidget(output_slider)
 
         # initialize results
         self.store.set_state("search_key", "")
