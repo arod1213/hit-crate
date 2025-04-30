@@ -10,7 +10,6 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -34,7 +33,6 @@ class Settings(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
-
         dir_sel = OpenDir()
         dir_sel.directory_added.connect(self.refresh_ui)
         self.main_layout.addWidget(dir_sel)
@@ -54,7 +52,9 @@ class Settings(QWidget):
                 path_label = QLabel(text=f"{dir.path}")
 
                 # Delete Button
-                delete_button = MenuButton(text="delete", icon="app/frontend/assets/close-icon.svg")
+                delete_button = MenuButton(
+                    text="delete", icon="app/frontend/assets/close-icon.svg"
+                )
                 delete_button.clicked.connect(
                     lambda _, p=dir.path: self.delete_directory(p)
                 )

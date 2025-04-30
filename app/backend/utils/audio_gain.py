@@ -1,10 +1,11 @@
 import numpy as np
 import pyloudnorm as pyln
 
+
 def get_lufs(audio: np.ndarray, sr: int | float, min_duration=0.5) -> float:
     target_len = int(min_duration * sr)
     if len(audio) < target_len:
-        padded = np.pad(audio, (0, target_len - len(audio)), 'constant')
+        padded = np.pad(audio, (0, target_len - len(audio)), "constant")
     else:
         padded = audio
 

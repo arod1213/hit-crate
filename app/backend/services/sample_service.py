@@ -89,6 +89,3 @@ class SampleService:
         if not found_file:
             return
         return self.repo.delete(path)
-
-
-

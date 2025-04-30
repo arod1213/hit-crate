@@ -12,7 +12,6 @@ from app.backend.services.sample_service import SampleService
 
 
 def scan_dir(path: Path, session: Session):
-
     existing_samples = {
         sample.path: sample
         for sample in session.exec(
@@ -27,6 +26,7 @@ def scan_dir(path: Path, session: Session):
         matching_sample = existing_samples.get(str(file))
         check_file(file, matching_sample, parent_path=path, session=session)
     pass
+
 
 def check_file(
     path: Path,
