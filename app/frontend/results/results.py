@@ -50,8 +50,7 @@ class Results(QWidget):
 
         self.results_list.currentItemChanged.connect(self.select_sample)
 
-        self.store.subscribe("search_key", self.reset_scrollbar)
-        self.store.subscribe("spectral_centroid", self.reset_scrollbar)
+        self.store.subscribe("data", self.reset_scrollbar)
 
         self.backslash_shortcut = QShortcut(
             QKeySequence(Qt.Key.Key_Backslash), self
@@ -109,8 +108,6 @@ class Results(QWidget):
         if sample is None:
             return
 
-        # self.loading_bar.toggle_loading(True)
-
         with Session(engine) as db_session:
             data = SampleService(db_session).query_similar(
                 path=Path(sample.path),
@@ -121,7 +118,3 @@ class Results(QWidget):
                 ),
             )
             self.store.set_state("results", data)
-
-        self.reset_scrollbar(None)
-        # self.loading_bar.toggle_loading(False)
-        # return data
