@@ -17,6 +17,7 @@ class StoreState:
     selected_sample: Optional[Sample] = None
     search_key: str = ""
     spectral_centroid: int = 40
+    by_favorites: bool = False
     results: Sequence[Sample] | None = None
     curr_page: int = 0
     lufs_target: float = -25

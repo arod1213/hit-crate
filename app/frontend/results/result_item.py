@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
+    QScrollArea,
     QWidget,
 )
 
@@ -12,8 +13,9 @@ from app.backend.models import Sample
 from app.frontend.results.favorite_button import FavoriteButton
 
 
-class ResultItem:
-    def __init__(self, sample: Sample, list_widget: QListWidget):
+class ResultItem(QWidget):
+    def __init__(self, sample: Sample):
+        super().__init__()
         self.item = QListWidgetItem()
         self.item.setData(Qt.ItemDataRole.UserRole, sample)
 
@@ -28,16 +30,11 @@ class ResultItem:
         layout.addStretch()
         layout.addWidget(button)
 
-        list_widget.addItem(self.item)
-        list_widget.setItemWidget(self.item, self.widget)
+        # self.scroll_area.itemSelectionChanged.connect(self.update_style)
+        # self.update_style()
 
-        # Store reference for dynamic styling
-        self.list_widget = list_widget
-        self.list_widget.itemSelectionChanged.connect(self.update_style)
-        self.update_style()
-
-    def update_style(self):
-        if self.item.isSelected():
-            self.widget.setStyleSheet("background-color: #5BA7FF; border-radius: 12px;")
-        else:
-            self.widget.setStyleSheet("background-color: transparent;")
+    # def update_style(self):
+    #     if self.item.isSelected():
+    #         self.widget.setStyleSheet("background-color: #5BA7FF; border-radius: 12px;")
+    #     else:
+    #         self.widget.setStyleSheet("background-color: transparent;")

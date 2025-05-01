@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from app.frontend.search.favorite_button import FavoriteButton
 from app.frontend.settings.toggle_view import ToggleView
 from app.frontend.store import Store
 
@@ -15,6 +16,9 @@ class Filters(QWidget):
 
         layout = QHBoxLayout(self)
         self.store = Store()
+
+        self.favorite_button = FavoriteButton()
+        layout.addWidget(self.favorite_button)
 
         byWidth = self.store._state.filters.by_width
         byFreq = self.store._state.filters.by_freq

@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Optional
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QKeySequence, QShortcut
+from PyQt6.QtCore import QMimeData, QUrl, Qt
+from PyQt6.QtGui import QDrag, QIcon, QKeySequence, QMouseEvent, QShortcut
 from PyQt6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
@@ -14,7 +14,9 @@ from sqlmodel import Session
 from app.backend.db import engine
 from app.backend.schemas import SampleSimilarInput
 from app.backend.services import SampleService
+
 # from app.frontend.components.loading import LoadingIndicator
+from app.frontend.components.draggable_list import DraggableList
 from app.frontend.results.result_item import ResultItem
 from app.frontend.store import Store, StoreState
 
@@ -30,7 +32,7 @@ class Results(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         # Create results list
-        self.results_list = QListWidget()
+        self.results_list = DraggableList()
         self.results_list.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
@@ -62,7 +64,13 @@ class Results(QWidget):
         if data is None:
             return
         for sample in data:
-            ResultItem(sample, self.results_list)
+            item = QListWidgetItem(sample.name)
+            item.setData(Qt.ItemDataRole.UserRole, sample)
+
+            if sample.is_favorite:
+                item.setIcon(QIcon("app/frontend/assets/heart-icon-fill.svg"))
+
+            self.results_list.addItem(item)
 
     def reset_scrollbar(self, _: Optional[StoreState]):
         scroll_bar = self.results_list.verticalScrollBar()
@@ -91,3 +99,4 @@ class Results(QWidget):
         self.reset_scrollbar(None)
         # self.loading_bar.toggle_loading(False)
         # return data
+

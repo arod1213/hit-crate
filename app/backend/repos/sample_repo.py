@@ -57,6 +57,8 @@ class SampleRepo:
             conditions.append(
                 func.lower(Sample.name).like(f"%{input.name.lower()}%")
             )
+        if input.is_favorite is True:
+            conditions.append(Sample.is_favorite == True)
 
         samples = self.session.exec(
             select(Sample)

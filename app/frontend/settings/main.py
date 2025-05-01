@@ -84,7 +84,7 @@ class Settings(QWidget):
 
     async def create_dir(self, path: Path):
         with Session(engine) as db_session:
-             DirectoryService(db_session).create(path)
+            DirectoryService(db_session).create(path)
         self.refresh_ui()
 
     def delete_directory(self, path: str):

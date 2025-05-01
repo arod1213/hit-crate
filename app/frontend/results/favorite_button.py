@@ -16,7 +16,8 @@ class FavoriteButton(QPushButton):
         super().__init__()
         self.sample = sample
 
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QPushButton {
                 border: none;
                 background: transparent;
@@ -25,11 +26,12 @@ class FavoriteButton(QPushButton):
                 /* Optional: tint or style for active state */
                 color: #e31b23;
             }
-        """)
+        """
+        )
 
         self.setCheckable(True)
         self.setChecked(sample.is_favorite)
-        self.setIcon(QIcon('app/frontend/assets/heart-icon.svg'))
+        self.setIcon(QIcon("app/frontend/assets/heart-icon.svg"))
         self.setIconSize(self.sizeHint())
 
         self.setFixedSize(20, 20)

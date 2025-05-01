@@ -11,7 +11,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    Boolean
+    Boolean,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -45,7 +45,9 @@ class Sample(Base):
         Enum(AudioFormat), nullable=False
     )
 
-    is_favorite: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_favorite: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
 
     sample_rate: Mapped[int] = mapped_column(Integer, nullable=False)
     lufs: Mapped[float] = mapped_column(Float, nullable=False)

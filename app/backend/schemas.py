@@ -20,6 +20,7 @@ class SampleSimilarInput:
 
 
 class SampleQueryInput(SQLModel):
+    is_favorite: Optional[bool] = None
     name: Optional[str] = None
     width: Optional[float] = None
     spectral_centroid: Optional[float] = None
