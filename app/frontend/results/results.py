@@ -77,7 +77,7 @@ class Results(QWidget):
         item.setData(Qt.ItemDataRole.UserRole, sample)
 
         if sample.is_favorite:
-            item.setIcon(QIcon("app/frontend/assets/heart-icon-fill.svg"))
+            item.setIcon(QIcon("assets/heart-icon-fill.svg"))
         else:
             item.setIcon(QIcon(""))
 

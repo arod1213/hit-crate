@@ -26,7 +26,7 @@ class Filters(QWidget):
             text="Width",
             pressed=byWidth,
             attribute="by_width",
-            icon="app/frontend/assets/stereo-icon.svg",
+            icon="assets/stereo-icon.svg",
         )
         layout.addWidget(self.width_button)
 
@@ -34,7 +34,7 @@ class Filters(QWidget):
             text="Frequency",
             pressed=byFreq,
             attribute="by_freq",
-            icon="app/frontend/assets/freq-icon.svg",
+            icon="assets/freq-icon.svg",
         )
         layout.addWidget(self.freq_button)
 

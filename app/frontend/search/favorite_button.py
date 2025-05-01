@@ -15,8 +15,8 @@ class FavoriteButton(QPushButton):
         byFavs = self.store._state.by_favorites
         self.setChecked(byFavs)
 
-        self.icon_pressed = "app/frontend/assets/heart-icon-fill.svg"
-        self.icon_unpressed = "app/frontend/assets/heart-icon.svg"
+        self.icon_pressed = "assets/heart-icon-fill.svg"
+        self.icon_unpressed = "assets/heart-icon.svg"
 
         self.set_icon(byFavs)
         self.setIconSize(QSize(25, 25))

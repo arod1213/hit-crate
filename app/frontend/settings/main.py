@@ -45,7 +45,7 @@ class Settings(QWidget):
 
                 # Folder Icon
                 icon_label = QLabel()
-                icon = QIcon("app/frontend/assets/folder-icon")
+                icon = QIcon("assets/folder-icon")
                 icon_label.setPixmap(icon.pixmap(QSize(16, 16)))
 
                 # Directory Path
@@ -53,7 +53,7 @@ class Settings(QWidget):
 
                 # Delete Button
                 delete_button = MenuButton(
-                    text="delete", icon="app/frontend/assets/close-icon.svg"
+                    text="delete", icon="assets/close-icon.svg"
                 )
                 delete_button.clicked.connect(
                     lambda _, p=dir.path: self.delete_directory(p)

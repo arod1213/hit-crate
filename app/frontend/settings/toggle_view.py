@@ -15,8 +15,8 @@ class ToggleView(QPushButton):
         self.setFixedSize(35, 35)
         self.setIconSize(QSize(25, 25))
 
-        self.settings_icon = QIcon("app/frontend/assets/settings-icon.svg")
-        self.back_icon = QIcon("app/frontend/assets/arrow-back-icon.svg")
+        self.settings_icon = QIcon("assets/settings-icon.svg")
+        self.back_icon = QIcon("assets/arrow-back-icon.svg")
 
         self.store.subscribe("curr_page", self.set_icon)
         self.set_icon(self.store._state)

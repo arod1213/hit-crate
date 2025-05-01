@@ -7,23 +7,25 @@ Usage:
 
 from setuptools import setup
 
-APP = ['app/main.py']
+APP = ['main.py']
 DATA_FILES = [
     ('assets', [
-        'app/frontend/assets/arrow-back-icon.svg',
-        'app/frontend/assets/close-icon.svg',
-        'app/frontend/assets/folder-icon.svg',
-        'app/frontend/assets/freq-icon.svg',
-        'app/frontend/assets/heart-icon-fill.svg',
-        'app/frontend/assets/heart-icon.svg',
-        'app/frontend/assets/settings-icon.svg',
-        'app/frontend/assets/stereo-icon.svg',
+        'assets/arrow-back-icon.svg',
+        'assets/close-icon.svg',
+        'assets/folder-icon.svg',
+        'assets/freq-icon.svg',
+        'assets/heart-icon-fill.svg',
+        'assets/heart-icon.svg',
+        'assets/settings-icon.svg',
+        'assets/stereo-icon.svg',
     ]),
 ]
 OPTIONS = {
     'argv_emulation': False,  # For macOS GUI apps to properly handle sys.argv
     'includes': ['Cocoa'],   # Ensure Cocoa is explicitly included
     'frameworks': ['/System/Library/Frameworks/Cocoa.framework'],  # Explicitly link Cocoa
+    'packages': ['app'],
+    # 'resources': ['assets'], 
 }
 
 setup(

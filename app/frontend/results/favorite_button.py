@@ -29,7 +29,7 @@ class FavoriteButton(QPushButton):
 
         self.setCheckable(True)
         self.setChecked(sample.is_favorite)
-        self.setIcon(QIcon("app/frontend/assets/heart-icon.svg"))
+        self.setIcon(QIcon("assets/heart-icon.svg"))
         self.setIconSize(self.sizeHint())
 
         self.setFixedSize(20, 20)
