@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Sequence
+from typing import Optional, Sequence
 
 from sqlalchemy import func, nullslast
 from sqlmodel import Session, select
@@ -127,7 +127,7 @@ class SampleRepo:
         self.session.refresh(sample)
         return sample
 
-    def update(self, path: Path, input: SampleUpdateInput):
+    def update(self, path: Path, input: SampleUpdateInput) -> Optional[Sample]:
         sample = self.session.exec(
             select(Sample).where(Sample.path == str(path))
         ).first()
@@ -149,6 +149,8 @@ class SampleRepo:
         self.session.add(sample)
         self.session.commit()
         self.session.refresh(sample)
+
+        return sample
 
     def update_path(self, src_path: Path, dest_path: Path):
         sample = self.session.exec(

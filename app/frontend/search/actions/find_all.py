@@ -19,7 +19,7 @@ class SearchAllTrigger:
                 SampleQueryInput(
                     name=state.search_key,
                     spectral_centroid=self.store._state.spectral_centroid,
-                    is_favorite=self.store._state.by_favorites
+                    is_favorite=self.store._state.by_favorites,
                 )
             )
         self.store.set_state("results", data)

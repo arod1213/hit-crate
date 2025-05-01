@@ -11,11 +11,13 @@ from PyQt6.QtWidgets import (
 from sqlmodel import Session
 
 from app.backend.db import engine
+from app.backend.models import Sample
 from app.backend.schemas import SampleSimilarInput
 from app.backend.services import SampleService
 
 # from app.frontend.components.loading import LoadingIndicator
 from app.frontend.components.draggable_list import DraggableList
+from app.frontend.results.context_menu import ContextMenu
 from app.frontend.store import Store, StoreState
 
 
@@ -36,6 +38,12 @@ class Results(QWidget):
         )
         self.results_list.setMinimumHeight(300)
         self.results_list.itemClicked.connect(self.select_sample)
+        self.results_list.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
+        )
+        self.results_list.customContextMenuRequested.connect(
+            self.show_context_menu
+        )
         layout.addWidget(self.results_list)
 
         self.setLayout(layout)
@@ -50,6 +58,31 @@ class Results(QWidget):
         )
         self.backslash_shortcut.activated.connect(self.find_similar)
 
+    def show_context_menu(self, position):
+        item = self.results_list.itemAt(position)
+        if item is None:
+            return  # No item under cursor
+
+        sample: Sample = item.data(Qt.ItemDataRole.UserRole)
+
+        menu = ContextMenu(sample)
+        menu.favorite_set.connect(lambda sample: self.set_item(item, sample))
+        menu.exec(self.results_list.viewport().mapToGlobal(position))  # type: ignore
+
+    def set_item(
+        self, item: Optional[QListWidgetItem], sample: Sample
+    ) -> QListWidgetItem:
+        if item is None:
+            item = QListWidgetItem(sample.name)
+        item.setData(Qt.ItemDataRole.UserRole, sample)
+
+        if sample.is_favorite:
+            item.setIcon(QIcon("app/frontend/assets/heart-icon-fill.svg"))
+        else:
+            item.setIcon(QIcon(""))
+
+        return item
+
     def select_sample(self, item):
         if item is None:
             return
@@ -62,12 +95,7 @@ class Results(QWidget):
         if data is None:
             return
         for sample in data:
-            item = QListWidgetItem(sample.name)
-            item.setData(Qt.ItemDataRole.UserRole, sample)
-
-            if sample.is_favorite:
-                item.setIcon(QIcon("app/frontend/assets/heart-icon-fill.svg"))
-
+            item = self.set_item(None, sample)
             self.results_list.addItem(item)
 
     def reset_scrollbar(self, _: Optional[StoreState]):
@@ -97,4 +125,3 @@ class Results(QWidget):
         self.reset_scrollbar(None)
         # self.loading_bar.toggle_loading(False)
         # return data
-

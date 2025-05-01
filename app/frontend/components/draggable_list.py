@@ -22,7 +22,8 @@ class DraggableList(QListWidget):
             return
         if (
             self._drag_start_pos is not None
-            and (e.pos() - self._drag_start_pos).manhattanLength() > QApplication.startDragDistance()
+            and (e.pos() - self._drag_start_pos).manhattanLength()
+            > QApplication.startDragDistance()
         ):
             sample = self.store._state.selected_sample
             if sample and sample.path:
