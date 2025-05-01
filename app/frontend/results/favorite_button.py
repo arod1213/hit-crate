@@ -1,14 +1,13 @@
-from typing import Optional
+
+from pathlib import Path
 
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QPushButton
 from sqlmodel import Session
-from pathlib import Path
 
-from app.backend.models import Sample
 from app.backend.db import engine
+from app.backend.models import Sample
 from app.backend.services.sample_service import SampleService
-from app.frontend.store import Store, StoreState
 
 
 class FavoriteButton(QPushButton):

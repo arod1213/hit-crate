@@ -1,10 +1,9 @@
 from pathlib import Path
 from typing import Optional
 
-from PyQt6.QtCore import QMimeData, QUrl, Qt
-from PyQt6.QtGui import QDrag, QIcon, QKeySequence, QMouseEvent, QShortcut
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
-    QListWidget,
     QListWidgetItem,
     QVBoxLayout,
     QWidget,
@@ -17,7 +16,6 @@ from app.backend.services import SampleService
 
 # from app.frontend.components.loading import LoadingIndicator
 from app.frontend.components.draggable_list import DraggableList
-from app.frontend.results.result_item import ResultItem
 from app.frontend.store import Store, StoreState
 
 

@@ -3,7 +3,6 @@ from logging.config import fileConfig
 from alembic import context
 from app.backend.db import engine
 from sqlmodel import SQLModel
-from app.backend.models import Base, Sample, Directory
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

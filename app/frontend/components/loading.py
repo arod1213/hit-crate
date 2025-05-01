@@ -1,6 +1,4 @@
-from PyQt6.QtWidgets import QLabel, QProgressBar, QVBoxLayout, QWidget
-
-from app.frontend.components.spinner import Spinner
+from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class LoadingIndicator(QWidget):

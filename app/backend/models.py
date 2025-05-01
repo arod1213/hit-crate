@@ -5,13 +5,13 @@ from typing import List, Optional
 
 from sqlalchemy import (
     BLOB,
+    Boolean,
     DateTime,
     Enum,
     Float,
     ForeignKey,
     Integer,
     String,
-    Boolean,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, mapped_column, relationship

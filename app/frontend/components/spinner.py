@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import QTimer
-from PyQt6.QtGui import QPainter, QColor, QPen
+from PyQt6.QtGui import QColor, QPainter, QPen
+from PyQt6.QtWidgets import QWidget
 
 
 class Spinner(QWidget):

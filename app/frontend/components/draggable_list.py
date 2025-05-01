@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QMimeData, QUrl, Qt
+from PyQt6.QtCore import QMimeData, Qt, QUrl
 from PyQt6.QtGui import QDrag, QMouseEvent
 from PyQt6.QtWidgets import QApplication, QListWidget
 
