@@ -2,7 +2,6 @@ from pathlib import Path
 
 from app.backend.db import engine
 from app.backend.services import DirectoryService
-from app.frontend.components.slider import Slider
 from app.frontend.settings.menu_button import MenuButton
 from app.frontend.settings.open_dir import OpenDir
 from app.frontend.settings.toggle_view import ToggleView
@@ -29,7 +28,6 @@ class Settings(QWidget):
         self.main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         back = ToggleView()
-
         self.main_layout.addWidget(back)
 
         self.setup_ui()
@@ -84,9 +82,9 @@ class Settings(QWidget):
         # Now re-setup the UI
         self.setup_ui()
 
-    def create_dir(self, path: Path):
+    async def create_dir(self, path: Path):
         with Session(engine) as db_session:
-            DirectoryService(db_session).create(path)
+             DirectoryService(db_session).create(path)
         self.refresh_ui()
 
     def delete_directory(self, path: str):

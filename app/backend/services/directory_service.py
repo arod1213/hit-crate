@@ -1,5 +1,5 @@
-from pathlib import Path
 import threading
+from pathlib import Path
 from typing import Optional
 
 from sqlmodel import Session
@@ -25,9 +25,7 @@ class DirectoryService:
         new_dir = self.repo.create(path)
         if new_dir is not None:
             new_thread = threading.Thread(
-                target=scan_dir,
-                args=(path,),
-                daemon=True
+                target=scan_dir, args=(path,), daemon=True
             )
             new_thread.start()
 

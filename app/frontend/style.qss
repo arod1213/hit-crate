@@ -3,6 +3,14 @@ QMainWindow {
     background-color: #E0E0E0;
 }
 
+QLabel {
+  background-color: transparent;
+}
+
+QLabel {
+  background-color: transparent;
+}
+
 /* Base Widget */
 QWidget {
     background-color: #E0E0E0;

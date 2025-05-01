@@ -11,6 +11,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Boolean
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -35,13 +36,17 @@ class Sample(Base):
     __tablename__ = "sample"
 
     path: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
     modified_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    hash: Mapped[str] = mapped_column(String, nullable=False)
+
     duration: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     format: Mapped[AudioFormat] = mapped_column(
         Enum(AudioFormat), nullable=False
     )
-    name: Mapped[str] = mapped_column(String, nullable=False)
-    hash: Mapped[str] = mapped_column(String, nullable=False)
+
+    is_favorite: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
     sample_rate: Mapped[int] = mapped_column(Integer, nullable=False)
     lufs: Mapped[float] = mapped_column(Float, nullable=False)
     stereo_width: Mapped[float] = mapped_column(

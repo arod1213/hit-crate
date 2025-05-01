@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from sqlmodel import Session
@@ -6,7 +7,6 @@ from watchdog.events import FileSystemEventHandler
 from app.backend.services import DirectoryService, SampleService
 from app.backend.utils.file_watch import scan_dir
 
-from concurrent.futures import ThreadPoolExecutor
 from .db import engine
 
 
@@ -40,7 +40,7 @@ class Handler(FileSystemEventHandler):
             return
         db_session = Session(engine)
         path = Path(str(event.src_path))
-        SampleService(db_session).update(path)
+        SampleService(db_session).update(path, is_favorite=None)
 
     # def on_any_event(self, event) -> None:
     #     print(event.src_path)

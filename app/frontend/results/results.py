@@ -14,6 +14,8 @@ from sqlmodel import Session
 from app.backend.db import engine
 from app.backend.schemas import SampleSimilarInput
 from app.backend.services import SampleService
+# from app.frontend.components.loading import LoadingIndicator
+from app.frontend.results.result_item import ResultItem
 from app.frontend.store import Store, StoreState
 
 
@@ -59,10 +61,8 @@ class Results(QWidget):
         data = state.results
         if data is None:
             return
-        for file in data:
-            item = QListWidgetItem(file.name)
-            item.setData(Qt.ItemDataRole.UserRole, file)
-            self.results_list.addItem(item)
+        for sample in data:
+            ResultItem(sample, self.results_list)
 
     def reset_scrollbar(self, _: Optional[StoreState]):
         scroll_bar = self.results_list.verticalScrollBar()
@@ -74,6 +74,9 @@ class Results(QWidget):
         sample = self.store._state.selected_sample
         if sample is None:
             return
+
+        # self.loading_bar.toggle_loading(True)
+
         with Session(engine) as db_session:
             data = SampleService(db_session).query_similar(
                 path=Path(sample.path),
@@ -86,4 +89,5 @@ class Results(QWidget):
             self.store.set_state("results", data)
 
         self.reset_scrollbar(None)
-        return data
+        # self.loading_bar.toggle_loading(False)
+        # return data

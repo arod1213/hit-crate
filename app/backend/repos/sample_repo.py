@@ -141,6 +141,8 @@ class SampleRepo:
             sample.lufs = input.lufs
         if input.sample_rate is not None:
             sample.sample_rate = input.sample_rate
+        if input.is_favorite is not None:
+            sample.is_favorite = input.is_favorite
 
         self.session.add(sample)
         self.session.commit()

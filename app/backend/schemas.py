@@ -39,6 +39,7 @@ class SampleCreateInput(SQLModel):
 
 
 class SampleUpdateInput(SQLModel):
+    is_favorite: Optional[bool] = None
     format: Optional[AudioFormat] = None
     duration: Optional[float] = None
     hash: Optional[str] = None

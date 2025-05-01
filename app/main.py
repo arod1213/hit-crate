@@ -3,7 +3,7 @@ import threading
 
 from PyQt6.QtWidgets import QApplication
 
-from app.backend.watcher import run_initial_scan, watchdog
+from app.backend.watcher import run_initial_scan
 from app.frontend.main import BrowserApp
 
 
@@ -16,7 +16,6 @@ def main():
 
     browser = BrowserApp()
     browser.run()
-
     sys.exit(app.exec())
 
 

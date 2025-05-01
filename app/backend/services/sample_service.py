@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Sequence
+from typing import Optional, Sequence
 
 from sqlmodel import Session
 
@@ -60,7 +60,7 @@ class SampleService:
             )
         )
 
-    def update(self, path: Path):
+    def update(self, path: Path, is_favorite: Optional[bool]):
         if not path.is_file():
             return
 
@@ -71,6 +71,7 @@ class SampleService:
         detail = AudioDetail(path)
 
         input = SampleUpdateInput(
+            is_favorite=is_favorite,
             duration=metadata.duration,
             format=metadata.format,
             hash=metadata.hash,
