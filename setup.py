@@ -25,7 +25,12 @@ OPTIONS = {
     'includes': ['Cocoa'],   # Ensure Cocoa is explicitly included
     'frameworks': ['/System/Library/Frameworks/Cocoa.framework'],  # Explicitly link Cocoa
     'packages': ['app'],
-    # 'resources': ['assets'], 
+    'arch': 'universal2',
+    'plist': {
+        'CFBundleIdentifier': 'com.aidanrodriguez.hitcrate',
+        'CFBundleShortVersionString': '1.0.0',
+        'NSHumanReadableCopyright': 'Copyright © 2025 Aidan Rodriguez'
+    }
 }
 
 setup(
@@ -33,6 +38,7 @@ setup(
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     name="Hit Crate",
+    version="1.0.0",
     author="Aidan Rodriguez",
     author_email="aidan@aidanrodriguez.com",
     license="MIT",
