@@ -32,7 +32,7 @@ def score_sample(x: AudioMetadata, sample: Sample):
 
     score = similarity_score(x, y)
 
-    if score > 0.9:
+    if score > 0.43:
         return (sample, score)
     return None
 

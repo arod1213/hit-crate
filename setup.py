@@ -21,16 +21,18 @@ DATA_FILES = [
     ]),
 ]
 OPTIONS = {
-    'argv_emulation': False,  # For macOS GUI apps to properly handle sys.argv
-    'includes': ['Cocoa'],   # Ensure Cocoa is explicitly included
-    'frameworks': ['/System/Library/Frameworks/Cocoa.framework'],  # Explicitly link Cocoa
+    'argv_emulation': False,
+    'includes': ['Cocoa'],
+    # 'frameworks': ['/System/Library/Frameworks/Cocoa.framework'],
     'packages': ['app'],
     'arch': 'universal2',
     'plist': {
         'CFBundleIdentifier': 'com.aidanrodriguez.hitcrate',
         'CFBundleShortVersionString': '1.0.0',
         'NSHumanReadableCopyright': 'Copyright © 2025 Aidan Rodriguez'
-    }
+    },
+    'excludes': ['wheel'],
+    'semi_standalone': False
 }
 
 setup(

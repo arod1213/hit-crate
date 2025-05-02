@@ -1,29 +1,45 @@
 import librosa
 import numpy as np
+import math
 
 
-def dtw_to_probability(dtw_distance, mean_distance=0, alpha=1):
-    return 1 / (1 + np.exp(alpha * (dtw_distance - mean_distance)))
+def dtw_to_probability(dtw_distance):
+    """
+    Convert DTW distance to a probability-like similarity score.
+
+    Parameters:
+    - dtw_distance: The final DTW cost.
+    - mean_distance: The center point for the sigmoid.
+    - scale: Controls how quickly the sigmoid drops off.
+    - alpha: Adjusts the steepness of the sigmoid.
+    """
+    if dtw_distance > 3000:
+        return 0
+    k = 0.00462
+    decay_rate = k * (dtw_distance - 1500)
+    denom = (1 + math.e ** decay_rate)
+    return 1 / denom
 
 
 def dtw_similarity(a: np.ndarray, b: np.ndarray) -> float:
-    min_len = min(a.shape[1], b.shape[1])
-    a = a[:, :min_len]
-    b = b[:, :min_len]
+    len_a = a.shape[1]
+    len_b = b.shape[1]
+    min_len = min(len_a, len_b)
 
     if min_len < 7:
         return 0
     elif min_len < 12 and a.shape[1] != b.shape[1]:
         return 0
 
+    # a = a[:, :min_len]
+    # b = b[:, :min_len]
+    max_len = max(len_a, len_b)
+    a = np.pad(a, (0, max_len - len_a), mode='constant', constant_values=0)
+    b = np.pad(b, (0, max_len - len_b), mode='constant', constant_values=0)
+
     D, _ = librosa.sequence.dtw(a.T, b.T)
     distance = D[-1, -1]
-    # return distance
-    # if distance < 2000:
-    #     print("INITIAL DISTANCE", distance)
-    value = dtw_to_probability(distance, mean_distance=700)
-    if value > 0.95:
-        print(min_len, a.shape[1], b.shape[1])
+    value = dtw_to_probability(distance)
     return value
 
 
