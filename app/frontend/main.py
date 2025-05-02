@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QMainWindow, QStackedWidget
 
 from app.frontend.browser.main import Browser
@@ -36,6 +37,7 @@ class BrowserApp(QMainWindow):
     def setup_ui(self):
         self.setWindowTitle("Hit Crate")
         self.setMinimumSize(450, 450)
+        self.resize(450, 700)
 
         self.setCentralWidget(self.stack)
 

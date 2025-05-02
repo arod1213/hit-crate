@@ -33,26 +33,26 @@ class AudioEngine:
             self.sample = sample
             self.file_path = file_path
             self.sound = pygame.mixer.Sound(str(file_path))
-        else:
-            print(f"File not found: {file_path}")
+        # else:
+        #     print(f"File not found: {file_path}")
 
     def play(self):
         """Play the audio in a separate thread."""
         if self.file_path is None:
-            print("No audio file loaded.")
+            # print("No audio file loaded.")
             return
         if self.is_playing:
             self.stop()
 
         if self.file_path.exists():
-            print("Playing audio...")
+            # print("Playing audio...")
             self.is_playing = True  # Set the state to playing
 
             # Run audio in a separate thread
             threading.Thread(target=self._play_audio).start()
 
-        else:
-            print(f"Audio file not found: {self.file_path}")
+        # else:
+        #     print(f"Audio file not found: {self.file_path}")
         # else:
         #     print("Audio is already playing.")
 
@@ -69,9 +69,6 @@ class AudioEngine:
             if lufs:
                 target_lufs = self._store._state.lufs_target
                 target_gain = amp_to_target_lufs(curr=lufs, target=target_lufs)
-                print(
-                    f"target is {target_lufs} and adjusting to {target_gain}"
-                )
                 self.sound.set_volume(target_gain)
 
         self.channel = self.sound.play(loops=0)
@@ -81,15 +78,15 @@ class AudioEngine:
             time.sleep(0.1)
 
         self.is_playing = False  # Set the state to not playing once done
-        print("Audio finished playing.")
+        # print("Audio finished playing.")
 
     def stop(self):
         """Stop the audio."""
         if self.channel is not None:
             self.channel.stop()
             self.is_playing = False
-        else:
-            print("No audio is currently loaded.")
+        # else:
+        #     print("No audio is currently loaded.")
 
     def is_audio_playing(self):
         """Check if the audio is currently playing."""

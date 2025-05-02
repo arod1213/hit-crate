@@ -20,12 +20,10 @@ else:
     db_path = get_default_db_path()
     DATABASE_URL = f"sqlite:///{db_path}"
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, echo=False)
 
 def create_db_and_tables():
-    print("Creating tables...")
     Base.metadata.create_all(engine)
-    print(f"✅ Database schema created at {DATABASE_URL}")
 
 
 if __name__ == "__main__":
