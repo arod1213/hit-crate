@@ -23,16 +23,35 @@ DATA_FILES = [
 OPTIONS = {
     'argv_emulation': False,
     'includes': ['Cocoa'],
-    # 'frameworks': ['/System/Library/Frameworks/Cocoa.framework'],
-    'packages': ['app'],
+    'packages': ['app',
+                 'sqlmodel',
+                 'numpy',
+                 # 'sqalchemy',
+                 'librosa',
+                 'soundfile',
+                 'watchdog',
+                 'thefuzz',
+                 'sqlite3',
+                 ],
     'arch': 'universal2',
     'plist': {
+        'CFBundleName': 'Hit Crate',
+        'CFBundleDisplayName': 'Hit Crate',
         'CFBundleIdentifier': 'com.aidanrodriguez.hitcrate',
-        'CFBundleShortVersionString': '1.0.0',
-        'NSHumanReadableCopyright': 'Copyright © 2025 Aidan Rodriguez'
+        'CFBundleVersion': '1.0.0',
+        'CFBundleShortVersionString': '1.0.0'
     },
-    'excludes': ['wheel'],
-    'semi_standalone': False
+    'iconfile': 'vinyl-icon.icns',
+    'excludes': ['wheel', 'tkinter', 'matplotlib', 'PyInstaller'],
+    'semi_standalone': False,
+    # 'strip': False,
+    'optimize': True,
+    'frameworks': [
+        '/Library/Frameworks/Python.framework/Versions/3.13'
+    ],
+    'resources': [
+        '/opt/homebrew/Cellar/libsndfile/1.2.2_1/lib/libsndfile.dylib'
+    ]
 }
 
 setup(
