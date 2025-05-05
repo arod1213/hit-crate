@@ -39,7 +39,7 @@ def check_file(
     session: Session,
 ):
     try:
-        if sf.info(str(path)).duration > 4.5:  # only load short samples
+        if sf.info(str(path)).duration > 5:  # only load short samples
             return
 
         m_time_float = os.path.getmtime(path)
