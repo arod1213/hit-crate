@@ -175,3 +175,4 @@ cython_debug/
 
 # sqlite database
 test.db
+*.svg
