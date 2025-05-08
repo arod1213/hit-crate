@@ -31,7 +31,6 @@ def scan_dir(path: Path):
             )
         pass
 
-
 def check_file(
     path: Path,
     matching_sample: Optional[Sample],

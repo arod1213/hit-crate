@@ -1,7 +1,8 @@
-from app.frontend.store import Store, StoreState
 from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QPushButton
+
+from app.frontend.store import Store, StoreState
 
 
 class ToggleView(QPushButton):

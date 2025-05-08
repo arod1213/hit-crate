@@ -37,6 +37,7 @@ class SampleCreateInput(SQLModel):
     stereo_width: float
     mfcc: bytes
     spectral_centroid: float
+    rolloff: float
 
 
 class SampleUpdateInput(SQLModel):
@@ -46,3 +47,7 @@ class SampleUpdateInput(SQLModel):
     hash: Optional[str] = None
     sample_rate: Optional[int]
     lufs: Optional[float]
+    mfcc: Optional[bytes] = None
+    stereo_width: Optional[float] = None
+    spectral_centroid: Optional[float] = None
+    rolloff: Optional[float] = None

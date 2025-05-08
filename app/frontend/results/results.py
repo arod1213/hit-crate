@@ -50,7 +50,7 @@ class Results(QWidget):
 
         self.results_list.currentItemChanged.connect(self.select_sample)
 
-        self.store.subscribe("data", self.reset_scrollbar)
+        self.store.subscribe("results", self.reset_scrollbar)
 
         self.backslash_shortcut = QShortcut(
             QKeySequence(Qt.Key.Key_Backslash), self

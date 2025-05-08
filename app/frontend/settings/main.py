@@ -1,10 +1,3 @@
-from pathlib import Path
-
-from app.backend.db import engine
-from app.backend.services import DirectoryService
-from app.frontend.settings.menu_button import MenuButton
-from app.frontend.settings.open_dir import OpenDir
-from app.frontend.settings.toggle_view import ToggleView
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
@@ -13,9 +6,27 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+import threading
+from pathlib import Path
 from sqlmodel import Session
 
+from app.backend.db import engine
+from app.backend.services import DirectoryService
+from app.frontend.settings.menu_button import MenuButton
+from app.frontend.settings.open_dir import OpenDir
+from app.frontend.settings.toggle_view import ToggleView
+
 from ..store import Store
+
+
+def update_dir(dir: str):
+    with Session(engine) as session:
+        DirectoryService(session).rescan(Path(dir))
+
+
+def rescan(dir: str):
+    t = threading.Thread(target=lambda x=dir: update_dir(x), daemon=True)
+    t.start()
 
 
 class Settings(QWidget):
@@ -51,6 +62,14 @@ class Settings(QWidget):
                 # Directory Path
                 path_label = QLabel(text=f"{dir.path}")
 
+                rescan_button = MenuButton(
+                    text="rescan",
+                    icon="assets/refresh-icon.svg",
+                    size=QSize(19, 19)
+                )
+                rescan_button.clicked.connect(
+                    lambda _, p=dir.path: rescan(p)
+                )
                 # Delete Button
                 delete_button = MenuButton(
                     text="delete", icon="assets/close-icon.svg"
@@ -63,6 +82,7 @@ class Settings(QWidget):
                 item_layout.addWidget(icon_label)
                 item_layout.addWidget(path_label)
                 item_layout.addStretch()
+                item_layout.addWidget(rescan_button)
                 item_layout.addWidget(delete_button)
 
                 self.main_layout.addWidget(item_widget)
