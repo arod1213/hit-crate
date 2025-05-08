@@ -1,6 +1,7 @@
+import math
+
 import librosa
 import numpy as np
-import math
 
 
 def dtw_to_probability(dtw_distance):
@@ -17,7 +18,7 @@ def dtw_to_probability(dtw_distance):
         return 0
     k = 0.00462
     decay_rate = k * (dtw_distance - 1500)
-    denom = (1 + math.e ** decay_rate)
+    denom = 1 + math.e**decay_rate
     return 1 / denom
 
 
@@ -34,8 +35,8 @@ def dtw_similarity(a: np.ndarray, b: np.ndarray) -> float:
     # a = a[:, :min_len]
     # b = b[:, :min_len]
     max_len = max(len_a, len_b)
-    a = np.pad(a, (0, max_len - len_a), mode='constant', constant_values=0)
-    b = np.pad(b, (0, max_len - len_b), mode='constant', constant_values=0)
+    a = np.pad(a, (0, max_len - len_a), mode="constant", constant_values=0)
+    b = np.pad(b, (0, max_len - len_b), mode="constant", constant_values=0)
 
     D, _ = librosa.sequence.dtw(a.T, b.T)
     distance = D[-1, -1]

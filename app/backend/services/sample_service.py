@@ -33,6 +33,9 @@ class SampleService:
     def query_similar(self, path: Path, input: SampleSimilarInput):
         return self.repo.query_similar(path, input)
 
+    def query_by_parent(self, path: Path):
+        return self.repo.query_by_parent(path)
+
     def create(self, path: Path, parent_path: Path) -> Sample:
         if not path.is_file():
             raise IsADirectoryError(f"path: {path} is a directory")
@@ -57,8 +60,26 @@ class SampleService:
                 stereo_width=detail.stereo_width,
                 mfcc=array_to_bytes(detail.mfcc),
                 spectral_centroid=detail.spectral_centroid,
+                rolloff=detail.rolloff,
             )
         )
+
+    def rescan(self, path: Path):
+        if not path.exists():
+            return
+        metadata = AudioMeta(path)
+        if metadata.format is None:  # if unsupported
+            raise ValueError(f"{metadata.format} is unsupported")
+        detail = AudioDetail(path)
+        input = SampleUpdateInput(
+            sample_rate=metadata.sample_rate,
+            lufs=detail.lufs,
+            stereo_width=detail.stereo_width,
+            mfcc=array_to_bytes(detail.mfcc),
+            spectral_centroid=detail.spectral_centroid,
+            rolloff=detail.rolloff,
+        )
+        return self.repo.update(path, input)
 
     def update(self, path: Path, is_favorite: Optional[bool]):
         if not path.is_file():

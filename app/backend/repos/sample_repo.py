@@ -42,7 +42,7 @@ class SampleRepo:
         if input.spectral_centroid is not None:
             order_conditions.append(
                 nullslast(
-                    func.abs(Sample.spectral_centroid - input.spectral_centroid).asc()  # type: ignore[arg-type]
+                    func.abs((Sample.spectral_centroid + Sample.rolloff) / 2 - input.spectral_centroid).asc()  # type: ignore[arg-type]
                 )
             )
             # conditions.append(
@@ -120,6 +120,7 @@ class SampleRepo:
             stereo_width=input.stereo_width,
             mfcc=input.mfcc,
             spectral_centroid=input.spectral_centroid,
+            rolloff=input.rolloff,
         )
 
         self.session.add(sample)
@@ -136,15 +137,13 @@ class SampleRepo:
 
         m_time_float = os.path.getmtime(path)
         sample.modified_at = datetime.fromtimestamp(m_time_float)
-        if input.hash is not None:
-            sample.hash = input.hash
-            sample.duration = input.duration
-        if input.lufs is not None:
-            sample.lufs = input.lufs
-        if input.sample_rate is not None:
-            sample.sample_rate = input.sample_rate
-        if input.is_favorite is not None:
-            sample.is_favorite = input.is_favorite
+
+        for attr in dir(input):
+            if not attr.startswith('_') and hasattr(sample, attr):
+                value = getattr(input, attr)
+                if value is not None:
+                    print(f"{attr} - {value}")
+                    setattr(sample, attr, value)
 
         self.session.add(sample)
         self.session.commit()

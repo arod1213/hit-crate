@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QMainWindow, QStackedWidget
 
 from app.frontend.browser.main import Browser

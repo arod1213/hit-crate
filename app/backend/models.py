@@ -56,6 +56,7 @@ class Sample(Base):
     )  # value between 0 and 200
     mfcc: Mapped[bytes] = mapped_column(BLOB, nullable=False)
     spectral_centroid: Mapped[float] = mapped_column(Float, nullable=False)
+    rolloff: Mapped[float] = mapped_column(Float, nullable=True, default=0.0)
 
     # Foreign key to directory table
     parent_path: Mapped[str] = mapped_column(

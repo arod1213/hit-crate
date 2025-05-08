@@ -69,6 +69,7 @@ class AudioEngine:
             if lufs:
                 target_lufs = self._store._state.lufs_target
                 target_gain = amp_to_target_lufs(curr=lufs, target=target_lufs)
+                # print(f"target {target_lufs} needs change of {target_gain}")
                 self.sound.set_volume(target_gain)
 
         self.channel = self.sound.play(loops=0)

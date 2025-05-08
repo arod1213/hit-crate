@@ -1,8 +1,6 @@
 from typing import Optional
 
 import numpy as np
-from app.frontend.components import Slider
-from app.frontend.search.actions.find_all import SearchAllTrigger
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -10,6 +8,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from app.frontend.components import Slider
+from app.frontend.search.actions.find_all import SearchAllTrigger
 
 from ..audio_engine import AudioEngine
 from ..results.info import Info
