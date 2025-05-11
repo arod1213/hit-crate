@@ -4,7 +4,8 @@ import soundfile as sf
 
 from app.backend.models import AudioFormat
 
-from .hash import get_file_hash
+from ..hash import get_file_hash
+from .core import get_file_format
 
 
 class AudioMeta:
@@ -18,13 +19,3 @@ class AudioMeta:
         self.sample_rate = info.samplerate
         self.channels = info.channels
 
-
-def get_file_format(path: Path) -> AudioFormat | None:
-    supported_formats = {fmt.value for fmt in AudioFormat}
-    suffix = path.suffix.lower()
-    if suffix not in supported_formats:
-        return None
-    return AudioFormat(suffix)
-
-
-__all__ = ["AudioMeta"]

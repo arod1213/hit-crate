@@ -14,8 +14,7 @@ from ..schemas import (
     SampleSimilarInput,
     SampleUpdateInput,
 )
-from ..utils.audio_core import AudioMeta
-from ..utils.audio_detail import AudioDetail
+from ..utils.audio import AudioMeta, AudioDetail
 
 
 class SampleService:
