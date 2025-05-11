@@ -5,10 +5,51 @@ import librosa
 import numpy as np
 import soundfile as sf
 
-from app.backend.utils.audio_gain import get_lufs
+from app.backend.utils.audio.gain import get_lufs
 
-from .audio_freq import mfcc, rolloff, spectral_centroid
-from .audio_width import get_stereo_width
+from .audio.freq import rolloff, spectral_centroid, mfcc
+from .audio.width import get_stereo_width
+from .audio.core import normalize_audio, filter_frequency_data, pad_audio
+
+class AudioDetail:
+    def __init__(self, path: Path):
+        self.name: str = path.stem
+        audio, sr = load_audio(str(path))
+
+        audio = pad_audio(audio)
+
+        self.lufs: float = get_lufs(audio, sr)
+        self.mfcc = mfcc(audio, sr)
+
+        info = sf.info(str(path))
+        if info.channels > 2:
+            raise ValueError("Invalid audio format")
+        elif info.channels == 1:
+            self.stereo_width = 0
+        else:
+            self.stereo_width = get_stereo_width(str(path))
+
+
+        normalized_audio = normalize_audio(audio, floor_db=-35)
+        normalized_audio = pad_audio(normalized_audio)
+        if len(normalized_audio) == 0:
+            raise ValueError(
+                "Invalid audio: likely silent even after normalization"
+                             )
+        
+        mel_spec = librosa.feature.melspectrogram(y=normalized_audio, sr=sr)
+        S = spectral_centroid(mel_spec)
+        S_filtered = filter_frequency_data(S)
+        if len(S_filtered) != 0:
+            S = S_filtered
+        self.spectral_centroid = get_median(S, 20)
+
+        R = rolloff(normalized_audio, sr)
+        R_filtered = filter_frequency_data(R)
+        if len(R_filtered) != 0:
+            R = R_filtered
+        R_max_values = np.sort(R)[-2:]
+        self.rolloff = np.median(R_max_values)
 
 
 def load_audio(path: str) -> Tuple[np.ndarray, int | float]:
@@ -24,55 +65,16 @@ def filter_below(arr, thresh: float):
     return arr[arr > thresh]
 
 
-def get_percentile(arr: np.ndarray, percentile: float):
-    # mean = np.mean(arr)
-    # std_dev = np.std(arr)
+def get_median(arr: np.ndarray, floor: float):
+    arr = filter_nan(arr)
+    if np.max(arr) > 20:
+        arr = filter_below(arr, floor)
+        if len(arr) == 0:
+            raise ValueError(
+                "File is likely silent, median could not be calculated"
+            )
 
-    return np.percentile(arr, percentile)
-
-
-class AudioDetail:
-    def __init__(self, path: Path):
-        audio, sr = load_audio(str(path))
-
-        if len(audio) < 2048:
-            audio = np.pad(audio, (0, 2048 - len(audio)), mode="constant")
-
-        info = sf.info(str(path))
-
-        if info.channels > 2:
-            raise ValueError("Invalid audio format")
-        elif info.channels == 1:
-            self.stereo_width = 0
-        else:
-            self.stereo_width = get_stereo_width(str(path))
-
-        self.name: str = path.stem
-
-        self.lufs: float = get_lufs(audio, sr)
-
-        mel_spec = librosa.feature.melspectrogram(y=audio, sr=sr)
-        S = spectral_centroid(mel_spec)
-        if np.max(S) > 20:
-            S = filter_below(S, 20)
-        if len(S) == 0:
-            raise ValueError("File is likely silent, freq could not be calculated")
-        self.spectral_centroid = np.percentile(filter_nan(S), 0.9)
-        if self.spectral_centroid < 20:
-            self.spectral_centroid = np.max(filter_nan(S))
-
-        R = rolloff(audio, sr)
-        if np.max(R) > 25:
-            R = filter_below(R, 25)
-
-        if len(R) == 0:
-            raise ValueError("File is likely silent, rolloff could not be calculated")
-        self.rolloff = np.percentile(filter_nan(R), 0.9)
-        if self.rolloff < 25:
-            self.rolloff = np.max(filter_nan(R))
-
-        self.mfcc = mfcc(audio, sr)
-        # self.fundamental: np.ndarray = pyin_fund(audio, sr)
-        # self.rolloff: np.ndarray = rolloff(audio, sr)
-
-        # print(f"{self.name} - {self.spectogram}")
+    median = np.median(arr)
+    if median < 20:
+        median = np.max(arr)
+    return median

@@ -6,7 +6,6 @@ from PyQt6.QtGui import QColor, QDrag, QMouseEvent, QPainter, QPen
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
 
 import app.backend.utils.waveform as wv
-
 from app.frontend.store import Store, StoreState
 
 

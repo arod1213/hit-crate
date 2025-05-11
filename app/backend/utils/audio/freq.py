@@ -2,12 +2,6 @@ import librosa
 import numpy as np
 
 
-def mel_spectogram(audio: np.ndarray, sr: int | float):
-    S = librosa.feature.melspectrogram(y=audio, sr=sr, power=2)
-    S_db = librosa.power_to_db(S, ref=np.max)
-    return S_db[0]
-
-
 def rolloff(audio: np.ndarray, sr: int | float):
     data = librosa.feature.spectral_rolloff(y=audio, sr=sr)
     return data[0]

@@ -76,7 +76,10 @@ class AudioEngine:
             return
         if self.file_path.exists():
             self.is_playing = True
-            threading.Thread(target=self._play_audio, daemon=True).start()
+            playback_thread = threading.Thread(
+                target=self._play_audio, daemon=True
+            )
+            playback_thread.start()
 
     def _play_audio(self):
         """Internal method to play the audio in the background."""

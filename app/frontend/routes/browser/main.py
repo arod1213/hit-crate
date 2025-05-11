@@ -2,6 +2,8 @@ from typing import Optional
 
 import numpy as np
 from app.frontend.components import Slider
+from app.frontend.components.wave_display import WaveDisplay
+from app.frontend.store import Store
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
@@ -11,8 +13,6 @@ from PyQt6.QtWidgets import (
 from .results import Info, ResultList
 from .search import Filters, SearchInput
 from .search.actions import SearchAllTrigger
-from app.frontend.store import Store
-from app.frontend.components.wave_display import WaveDisplay
 
 
 class Browser(QWidget):
