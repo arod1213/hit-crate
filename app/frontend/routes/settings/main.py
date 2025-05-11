@@ -4,11 +4,7 @@ from pathlib import Path
 from app.backend.db import engine
 from app.backend.services import DirectoryService
 from app.frontend.components import ToggleView
-
-from .audio_settings import AudioSettings
-from .menu_button import MenuButton
-from .open_dir import OpenDir
-
+from app.frontend.store import Store
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
@@ -19,7 +15,9 @@ from PyQt6.QtWidgets import (
 )
 from sqlmodel import Session
 
-from app.frontend.store import Store
+from .audio_settings import AudioSettings
+from .menu_button import MenuButton
+from .open_dir import OpenDir
 
 
 def update_dir(dir: str):
