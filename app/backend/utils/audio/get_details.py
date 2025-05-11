@@ -6,10 +6,10 @@ import numpy as np
 import soundfile as sf
 
 from app.backend.utils.audio.gain import get_lufs
+from .freq import rolloff, spectral_centroid, mfcc
+from .width import get_stereo_width
+from .core import normalize_audio, filter_frequency_data, pad_audio, load_audio, get_median
 
-from .audio.freq import rolloff, spectral_centroid, mfcc
-from .audio.width import get_stereo_width
-from .audio.core import normalize_audio, filter_frequency_data, pad_audio
 
 class AudioDetail:
     def __init__(self, path: Path):
@@ -51,30 +51,3 @@ class AudioDetail:
         R_max_values = np.sort(R)[-3:]
         self.rolloff = np.median(R_max_values)
 
-
-def load_audio(path: str) -> Tuple[np.ndarray, int | float]:
-    audio, sr = librosa.load(path, mono=True, res_type="soxr_lq")
-    return (audio, sr)
-
-
-def filter_nan(arr):
-    return arr[~np.isnan(arr) & (arr != 0)]
-
-
-def filter_below(arr, thresh: float):
-    return arr[arr > thresh]
-
-
-def get_median(arr: np.ndarray, floor: float):
-    arr = filter_nan(arr)
-    if np.max(arr) > 20:
-        arr = filter_below(arr, floor)
-        if len(arr) == 0:
-            raise ValueError(
-                "File is likely silent, median could not be calculated"
-            )
-
-    median = np.median(arr)
-    if median < 20:
-        median = np.max(arr)
-    return median
