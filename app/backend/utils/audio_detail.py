@@ -42,13 +42,13 @@ class AudioDetail:
         S_filtered = filter_frequency_data(S)
         if len(S_filtered) != 0:
             S = S_filtered
-        self.spectral_centroid = get_median(S, 20)
+        self.spectral_centroid = get_median(S, floor=20)
 
         R = rolloff(normalized_audio, sr)
         R_filtered = filter_frequency_data(R)
         if len(R_filtered) != 0:
             R = R_filtered
-        R_max_values = np.sort(R)[-2:]
+        R_max_values = np.sort(R)[-3:]
         self.rolloff = np.median(R_max_values)
 
 

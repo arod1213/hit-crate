@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_DIR="../dist/Hit Crate.app"
+APP_DIR="dist/Hit Crate.app"
 
 echo "🔍 Flattening symlinks in: $APP_DIR"
 

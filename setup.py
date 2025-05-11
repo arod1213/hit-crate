@@ -30,7 +30,6 @@ OPTIONS = {
     'packages': ['app',
                  'sqlmodel',
                  'numpy',
-                 # 'sqalchemy',
                  'librosa',
                  'soundfile',
                  'watchdog',
@@ -42,13 +41,12 @@ OPTIONS = {
         'CFBundleName': 'Hit Crate',
         'CFBundleDisplayName': 'Hit Crate',
         'CFBundleIdentifier': 'com.aidanrodriguez.hitcrate',
-        'CFBundleVersion': '1.0.2',
-        'CFBundleShortVersionString': '1.0.2'
+        'CFBundleVersion': '1.0.3',
+        'CFBundleShortVersionString': '1.0.3'
     },
-    'iconfile': 'vinyl-icon.icns',
+    'iconfile': 'assets/vinyl-icon.icns',
     'excludes': ['wheel', 'tkinter', 'matplotlib', 'PyInstaller'],
     'semi_standalone': False,
-    # 'strip': False,
     'optimize': True,
     'frameworks': [
         '/Library/Frameworks/Python.framework/Versions/3.13'
