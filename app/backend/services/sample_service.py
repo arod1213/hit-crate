@@ -66,6 +66,7 @@ class SampleService:
 
     def rescan(self, path: Path):
         if not path.exists():
+            self.delete(path)
             return
         metadata = AudioMeta(path)
         if metadata.format is None:  # if unsupported
@@ -105,7 +106,7 @@ class SampleService:
         return self.repo.update_path(src_path, dest_path)
 
     def delete(self, path: Path):
-        if not path.is_file():
+        if not path.is_file() and path.exists():
             return
         found_file = self.repo.query(path)
         if not found_file:

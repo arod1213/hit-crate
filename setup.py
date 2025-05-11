@@ -6,11 +6,11 @@ Usage:
 """
 import os
 
-os.environ['MACOSX_DEPLOYMENT_TARGET'] = '12.0'
+os.environ['MACOSX_DEPLOYMENT_TARGET'] = '14.0'
 
 from setuptools import setup
 
-APP = ['main.py']
+APP = ['app/main.py']
 DATA_FILES = [
     ('assets', [
         'assets/arrow-back-icon.svg',
@@ -42,8 +42,8 @@ OPTIONS = {
         'CFBundleName': 'Hit Crate',
         'CFBundleDisplayName': 'Hit Crate',
         'CFBundleIdentifier': 'com.aidanrodriguez.hitcrate',
-        'CFBundleVersion': '1.0.0',
-        'CFBundleShortVersionString': '1.0.0'
+        'CFBundleVersion': '1.0.2',
+        'CFBundleShortVersionString': '1.0.2'
     },
     'iconfile': 'vinyl-icon.icns',
     'excludes': ['wheel', 'tkinter', 'matplotlib', 'PyInstaller'],
@@ -63,7 +63,7 @@ setup(
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     name="Hit Crate",
-    version="1.0.0",
+    version="1.0.3",
     author="Aidan Rodriguez",
     author_email="aidan@aidanrodriguez.com",
     license="MIT",

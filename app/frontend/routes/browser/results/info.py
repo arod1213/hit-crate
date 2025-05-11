@@ -1,14 +1,13 @@
 from typing import Optional
 
+from app.backend.models import Sample
+from app.frontend.store import Store, StoreState
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QWidget,
 )
-
-from app.backend.models import Sample
-from app.frontend.store import Store, StoreState
 
 
 class Info(QWidget):
@@ -62,4 +61,4 @@ class Info(QWidget):
         while self._layout.count():
             item = self._layout.takeAt(0)
             if item is not None and item.widget() is not None:
-                item.widget().deleteLater()
+                item.widget().deleteLater()  # type: ignore

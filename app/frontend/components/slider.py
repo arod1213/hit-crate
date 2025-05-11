@@ -38,5 +38,5 @@ class Slider(QWidget):
         self.slider.setValue(getattr(state, self.subscribe_to))
 
     def update_store(self):
-        print(f"value is {self.slider.value()} {self.subscribe_to}")
+        # print(f"value is {self.slider.value()} {self.subscribe_to}")
         self.store.set_state(self.subscribe_to, self.slider.value())

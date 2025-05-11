@@ -1,12 +1,11 @@
+from app.frontend.components.toggle_view import ToggleView
+from app.frontend.store import Store
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QWidget,
 )
 
-from app.frontend.search.favorite_button import FavoriteButton
-from app.frontend.settings.toggle_view import ToggleView
-from app.frontend.store import Store
-
+from .favorite_button import FavoriteButton
 from .filter_button import FilterButton
 
 

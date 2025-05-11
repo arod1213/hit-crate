@@ -1,14 +1,13 @@
 from pathlib import Path
 
+from app.backend.db import engine
+from app.backend.services import DirectoryService
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QFileDialog,
     QPushButton,
 )
 from sqlmodel import Session
-
-from app.backend.db import engine
-from app.backend.services import DirectoryService
 
 
 class OpenDir(QPushButton):

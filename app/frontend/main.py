@@ -2,8 +2,8 @@ from pathlib import Path
 
 from PyQt6.QtWidgets import QMainWindow, QStackedWidget
 
-from app.frontend.browser.main import Browser
-from app.frontend.settings.main import Settings
+from app.frontend.routes.browser.main import Browser
+from app.frontend.routes.settings.main import Settings
 from app.frontend.store import Store, StoreState
 
 
@@ -20,6 +20,7 @@ class BrowserApp(QMainWindow):
         self.stack = QStackedWidget()
         self.stack.addWidget(self.browser_widget)
         self.stack.addWidget(self.settings_widget)
+
 
         self.setup_ui()
         self.setStyleSheet(self.load_stylesheet())

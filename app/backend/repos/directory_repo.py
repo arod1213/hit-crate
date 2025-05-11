@@ -21,6 +21,10 @@ class DirectoryRepo:
         return self.session.exec(select(Directory)).all()
 
     def create(self, path: Path) -> Directory:
+        exists = self.query(path)
+        if exists:
+            return exists
+
         dir = Directory(path=str(path))
         self.session.add(dir)
         self.session.commit()

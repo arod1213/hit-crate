@@ -1,3 +1,14 @@
+import threading
+from pathlib import Path
+
+from app.backend.db import engine
+from app.backend.services import DirectoryService
+from app.frontend.components import ToggleView
+
+from .audio_settings import AudioSettings
+from .menu_button import MenuButton
+from .open_dir import OpenDir
+
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
@@ -6,17 +17,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-import threading
-from pathlib import Path
 from sqlmodel import Session
 
-from app.backend.db import engine
-from app.backend.services import DirectoryService
-from app.frontend.settings.menu_button import MenuButton
-from app.frontend.settings.open_dir import OpenDir
-from app.frontend.settings.toggle_view import ToggleView
-
-from ..store import Store
+from app.frontend.store import Store
 
 
 def update_dir(dir: str):
@@ -44,6 +47,8 @@ class Settings(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
+        audio_settings = AudioSettings()
+        self.main_layout.addWidget(audio_settings)
         dir_sel = OpenDir()
         dir_sel.directory_added.connect(self.refresh_ui)
         self.main_layout.addWidget(dir_sel)

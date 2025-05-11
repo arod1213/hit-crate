@@ -15,7 +15,10 @@ def run_initial_scan():
         dirs = DirectoryService(session).query_directories()
         paths = [Path(d.path) for d in dirs]
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(
+        max_workers=5,
+        thread_name_prefix='scan_worker'
+    ) as executor:
         for path in paths:
             executor.submit(scan_dir, path)
 
@@ -54,13 +57,13 @@ class Handler(FileSystemEventHandler):
         SampleService(db_session).update_path(path, dest_path)
 
 
-def watchdog(func):
-    def wrapper(*args, **kwargs):
-        # observer = Observer()
-        # handler = Handler()
-        # observer.schedule(handler, str(WATCH_DIR), recursive=True)
-        # observer.start()
-
-        func(*args, **kwargs)
-
-    return wrapper
+# def watchdog(func):
+#     def wrapper(*args, **kwargs):
+#         # observer = Observer()
+#         # handler = Handler()
+#         # observer.schedule(handler, str(WATCH_DIR), recursive=True)
+#         # observer.start()
+#
+#         func(*args, **kwargs)
+#
+#     return wrapper

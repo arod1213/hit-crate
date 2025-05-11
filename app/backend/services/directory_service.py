@@ -5,7 +5,6 @@ from typing import Optional
 from sqlmodel import Session
 
 from app.backend.repos.directory_repo import DirectoryRepo
-from app.backend.repos.sample_repo import SampleRepo
 from app.backend.services.sample_service import SampleService
 from app.backend.utils.file_watch import scan_dir
 
@@ -35,7 +34,6 @@ class DirectoryService:
     def rescan(self, path: Path):
         samples = self.sample_service.query_by_parent(path)
         for s in samples:
-            print(f"s is {s.name}")
             self.sample_service.rescan(Path(s.path))
 
     def delete(self, path: str):

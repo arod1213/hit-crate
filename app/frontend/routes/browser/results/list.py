@@ -1,6 +1,15 @@
 from pathlib import Path
 from typing import Optional
 
+from app.backend.db import engine
+from app.backend.models import Sample
+from app.backend.schemas import SampleSimilarInput
+from app.backend.services import SampleService
+from app.frontend.audio_engine import AudioEngine
+from app.frontend.components.draggable_list import DraggableList
+from app.frontend.routes.browser.results.context_menu import ContextMenu
+from app.frontend.settings import load_auto_play_setting
+from app.frontend.store import Store, StoreState
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -10,22 +19,14 @@ from PyQt6.QtWidgets import (
 )
 from sqlmodel import Session
 
-from app.backend.db import engine
-from app.backend.models import Sample
-from app.backend.schemas import SampleSimilarInput
-from app.backend.services import SampleService
 
-# from app.frontend.components.loading import LoadingIndicator
-from app.frontend.components.draggable_list import DraggableList
-from app.frontend.results.context_menu import ContextMenu
-from app.frontend.store import Store, StoreState
-
-
-class Results(QWidget):
+class ResultList(QWidget):
     def __init__(self):
         super().__init__()
         self.store = Store()
         self.store.subscribe("results", self.refresh_results)
+
+        self.audio_player = AudioEngine()
 
         # Create layout
         layout = QVBoxLayout(self)
@@ -37,7 +38,6 @@ class Results(QWidget):
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
         self.results_list.setMinimumHeight(300)
-        self.results_list.itemClicked.connect(self.select_sample)
         self.results_list.setContextMenuPolicy(
             Qt.ContextMenuPolicy.CustomContextMenu
         )
@@ -48,14 +48,22 @@ class Results(QWidget):
 
         self.setLayout(layout)
 
-        self.results_list.currentItemChanged.connect(self.select_sample)
-
         self.store.subscribe("results", self.reset_scrollbar)
+
+        # handle selection of sample
+        self.results_list.currentItemChanged.connect(
+            self.handle_select_sample
+        )
+        # self.results_list.itemClicked.connect(
+        #     self.handle_select_sample
+        # )
 
         self.backslash_shortcut = QShortcut(
             QKeySequence(Qt.Key.Key_Backslash), self
         )
         self.backslash_shortcut.activated.connect(self.find_similar)
+        self.space_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
+        self.space_shortcut.activated.connect(lambda x=None: self.play_sample(x))
 
     def show_context_menu(self, position):
         item = self.results_list.itemAt(position)
@@ -82,11 +90,25 @@ class Results(QWidget):
 
         return item
 
-    def select_sample(self, item):
+    def handle_select_sample(self, item):
         if item is None:
             return
         file_data = item.data(Qt.ItemDataRole.UserRole)
         self.store.set_state("selected_sample", file_data)
+        auto_play = load_auto_play_setting()
+        if auto_play:
+            self.play_sample(file_data)
+
+    def play_sample(self, sample: Optional[Sample]):
+        if sample is None:
+            sample = self.store._state.selected_sample
+
+        if sample is not None:
+            can_play = self.audio_player.load_audio(sample)
+            if can_play:
+                self.audio_player.play()
+            else:
+                self.audio_player.stop()
 
     def refresh_results(self, state: StoreState):
         self.results_list.clear()
