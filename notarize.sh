@@ -5,7 +5,7 @@ ASP_PASSWORD="rwik-gkzm-hwbi-kazk"    # Store your app-specific password in Keyc
 BUNDLE_ID="com.aidanrodriguez.hitcrate"    # Replace with your actual bundle ID
 KEYCHAIN_PROFILE="DevNotary"
 APP_PATH="dist/Hit Crate.app"
-ENTITLEMENTS_PATH="../entitlements.plist"  # Create this file if needed
+ENTITLEMENTS_PATH="entitlements.plist"  # Create this file if needed
 DMG_NAME="dist/Hit Crate.dmg"
 ZIP_NAME="dist/Hit Crate.zip"
 

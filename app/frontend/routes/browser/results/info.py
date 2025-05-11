@@ -38,8 +38,8 @@ class Info(QWidget):
         if sample is not None:
             name = sample.name
             format = sample.format.value
-            # duration = f"{sample.duration:.2f}s"
-            duration = f"{sample.spectral_centroid:.2f} {sample.rolloff}"
+            duration = f"{sample.duration:.2f}s"
+            # duration = f"{sample.spectral_centroid:.2f} {sample.rolloff}"
             width = f"Width: {sample.stereo_width:.2f}"
 
         self.clear_layout()
