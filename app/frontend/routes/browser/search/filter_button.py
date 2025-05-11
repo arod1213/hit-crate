@@ -1,9 +1,8 @@
 from typing import Optional
 
+from app.frontend.store import Store, StoreState
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QPushButton
-
-from app.frontend.store import Store, StoreState
 
 
 class FilterButton(QPushButton):

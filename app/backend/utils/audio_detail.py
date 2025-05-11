@@ -20,6 +20,17 @@ def filter_nan(arr):
     return arr[~np.isnan(arr) & (arr != 0)]
 
 
+def filter_below(arr, thresh: float):
+    return arr[arr > thresh]
+
+
+def get_percentile(arr: np.ndarray, percentile: float):
+    # mean = np.mean(arr)
+    # std_dev = np.std(arr)
+
+    return np.percentile(arr, percentile)
+
+
 class AudioDetail:
     def __init__(self, path: Path):
         audio, sr = load_audio(str(path))
@@ -42,13 +53,22 @@ class AudioDetail:
 
         mel_spec = librosa.feature.melspectrogram(y=audio, sr=sr)
         S = spectral_centroid(mel_spec)
-        self.spectral_centroid = np.median(filter_nan(S))
-        if self.spectral_centroid < 40:
+        if np.max(S) > 20:
+            S = filter_below(S, 20)
+        if len(S) == 0:
+            raise ValueError("File is likely silent, freq could not be calculated")
+        self.spectral_centroid = np.percentile(filter_nan(S), 0.9)
+        if self.spectral_centroid < 20:
             self.spectral_centroid = np.max(filter_nan(S))
 
         R = rolloff(audio, sr)
-        self.rolloff = np.median(filter_nan(R))
-        if self.rolloff < 40:
+        if np.max(R) > 25:
+            R = filter_below(R, 25)
+
+        if len(R) == 0:
+            raise ValueError("File is likely silent, rolloff could not be calculated")
+        self.rolloff = np.percentile(filter_nan(R), 0.9)
+        if self.rolloff < 25:
             self.rolloff = np.max(filter_nan(R))
 
         self.mfcc = mfcc(audio, sr)

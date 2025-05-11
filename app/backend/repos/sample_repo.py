@@ -42,7 +42,9 @@ class SampleRepo:
         if input.spectral_centroid is not None:
             order_conditions.append(
                 nullslast(
-                    func.abs((Sample.spectral_centroid + Sample.rolloff) / 2 - input.spectral_centroid).asc()  # type: ignore[arg-type]
+                    func.abs(
+                        (Sample.spectral_centroid * 0.5 + Sample.rolloff * 0.5)
+                            - input.spectral_centroid).asc()  # type: ignore[arg-type]
                 )
             )
             # conditions.append(
@@ -142,7 +144,7 @@ class SampleRepo:
             if not attr.startswith('_') and hasattr(sample, attr):
                 value = getattr(input, attr)
                 if value is not None:
-                    print(f"{attr} - {value}")
+                    # print(f"{attr} - {value}")
                     setattr(sample, attr, value)
 
         self.session.add(sample)

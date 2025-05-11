@@ -44,6 +44,7 @@ def migrate_database():
 
 def create_db_and_tables():
     Base.metadata.create_all(engine)
+    migrate_database()
 
 
 if __name__ == "__main__":

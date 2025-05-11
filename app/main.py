@@ -7,7 +7,6 @@ from app.frontend.main import BrowserApp
 from PyQt6.QtWidgets import QApplication
 
 
-# @watchdog
 def main():
     create_db_and_tables()
 
@@ -18,6 +17,7 @@ def main():
 
     browser = BrowserApp()
     browser.run()
+
     sys.exit(app.exec())
 
 

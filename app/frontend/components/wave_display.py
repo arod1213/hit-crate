@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import QVBoxLayout, QWidget
 
 import app.backend.utils.waveform as wv
 
-from .store import Store, StoreState
+from app.frontend.store import Store, StoreState
 
 
 class WaveDisplay(QWidget):
