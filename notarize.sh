@@ -10,7 +10,7 @@ DMG_NAME="dist/Hit Crate.dmg"
 ZIP_NAME="dist/Hit Crate.zip"
 
 
-# cd ~/documents/github/hit-crate
+cd ~/documents/github/hit-crate
 # rm -rf dist
 # rm -rf build
 #
@@ -18,7 +18,7 @@ ZIP_NAME="dist/Hit Crate.zip"
 
 
 echo "Unzipping necessary files"
-cd "../dist/Hit Crate.app/Contents/Resources/lib"
+cd "dist/Hit Crate.app/Contents/Resources/lib"
 unzip python313.zip -d python3.13
 rm python313.zip
 
