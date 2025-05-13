@@ -16,8 +16,7 @@ def run_initial_scan():
         paths = [Path(d.path) for d in dirs]
 
     with ThreadPoolExecutor(
-        max_workers=5,
-        thread_name_prefix='scan_worker'
+        max_workers=5, thread_name_prefix="scan_worker"
     ) as executor:
         for path in paths:
             executor.submit(scan_dir, path)

@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
 
-from sqlalchemy import func, nullslast
+from sqlalchemy import func, nullslast, or_
 from sqlmodel import Session, select
 
 from ..models import Sample
@@ -27,46 +27,55 @@ class SampleRepo:
 
     def query_by_parent(self, path: Path):
         return self.session.exec(
-            select(Sample).where(Sample.parent_path == str(path))
+            select(Sample).where(
+                or_(
+                    Sample.parent_path == str(path),
+                    Sample.path.contains(str(path)),
+                )
+            )
         ).all()
 
     def query_samples(self, input: SampleQueryInput) -> Sequence[Sample]:
         conditions = []
         order_conditions = []
 
-        if input.width:
-            conditions.append(Sample.stereo_width is not None)
-            conditions.append(
-                func.abs(Sample.stereo_width - input.width) < 5  # type: ignore[arg-type]
+        # audio properties
+        if input.width is not None:
+            order_conditions.append(
+                func.abs(Sample.stereo_width - input.width).asc()  # type: ignore[arg-type]
             )
         if input.spectral_centroid is not None:
             order_conditions.append(
                 nullslast(
                     func.abs(
                         (Sample.spectral_centroid * 0.5 + Sample.rolloff * 0.5)
-                            - input.spectral_centroid).asc()  # type: ignore[arg-type]
+                        - input.spectral_centroid
+                    ).asc()  # type: ignore[arg-type]
                 )
             )
-            # conditions.append(
-            #     func.abs(
-            #         func.log(Sample.spectral_centroid)
-            #         - func.log(input.spectral_centroid)
-            #     )
-            #     < 0.3
-            # )
-            pass
+        if input.spectral_centroid is None and input.width is None:
+            order_conditions.append(Sample.name.asc())
+
+        # general metadata
         if input.name and input.name != "":
             conditions.append(
                 func.lower(Sample.name).like(f"%{input.name.lower()}%")
             )
         if input.is_favorite is True:
             conditions.append(Sample.is_favorite == True)
+        if input.path is not None:
+            conditions.append(
+                or_(
+                    Sample.parent_path == str(input.path),
+                    Sample.path.contains(str(input.path)),
+                )
+            )
 
         samples = self.session.exec(
             select(Sample)
             .where(*conditions)
             .order_by(*order_conditions)
-            .limit(1000)
+            .limit(2000)
         ).all()
         return samples
 
@@ -141,7 +150,7 @@ class SampleRepo:
         sample.modified_at = datetime.fromtimestamp(m_time_float)
 
         for attr in dir(input):
-            if not attr.startswith('_') and hasattr(sample, attr):
+            if not attr.startswith("_") and hasattr(sample, attr):
                 value = getattr(input, attr)
                 if value is not None:
                     # print(f"{attr} - {value}")

@@ -16,7 +16,7 @@ def amp_to_db(amplitude, reference=1.0):
         The amplitude in dB
     """
     # Avoid log of zero or negative values
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         # Formula: dB = 20 * log10(amplitude/reference)
         db = 20 * np.log10(np.abs(amplitude) / reference)
 

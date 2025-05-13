@@ -10,6 +10,7 @@ def load_audio(path: str) -> Tuple[np.ndarray, int | float]:
     audio, sr = librosa.load(path, mono=True, res_type="soxr_lq")
     return (audio, sr)
 
+
 def normalize_audio(audio: np.ndarray, floor_db: float = -45):
     floor_amp = db_to_amp(floor_db)
     # print(np.abs(audio))
@@ -18,12 +19,12 @@ def normalize_audio(audio: np.ndarray, floor_db: float = -45):
 
     if len(gated_audio) != 0:
         audio = gated_audio
-    
+
     peak = np.max(audio)
     # print(f"min is {np.min(np.abs(audio))}")
     if peak == 0:
         return audio
-    
+
     mult = 1 / peak
     return audio * mult
 
@@ -34,17 +35,21 @@ def pad_audio(audio: np.ndarray):
         audio = np.pad(audio, (0, 2048 - len(audio)), mode="constant")
     return audio
 
-def filter_frequency_data(arr: np.ndarray, floor: float=25.0):
+
+def filter_frequency_data(arr: np.ndarray, floor: float = 25.0):
     arr = arr[~np.isnan(arr) & (arr != 0)]
     return arr[arr > floor]
+
 
 def filter_nan(arr):
     return arr[~np.isnan(arr) & (arr != 0)]
 
+
 def filter_below(arr, thresh: float):
     return arr[arr > thresh]
 
-def get_median(arr: np.ndarray, floor: float):
+
+def get_median(arr: np.ndarray, floor: float) -> float:
     arr = filter_nan(arr)
     if np.max(arr) > 20:
         arr = filter_below(arr, floor)
@@ -53,10 +58,15 @@ def get_median(arr: np.ndarray, floor: float):
                 "File is likely silent, median could not be calculated"
             )
 
+    if len(arr) == 0:
+        raise ValueError(
+            "File is likely silent, median could not be calculated"
+        )
+
     median = np.median(arr)
     if median < 20:
         median = np.max(arr)
-    return median
+    return float(median)
 
 
 # metadata
@@ -84,7 +94,7 @@ def amp_to_db(amplitude, reference=1.0):
         The amplitude in dB
     """
     # Avoid log of zero or negative values
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         # Formula: dB = 20 * log10(amplitude/reference)
         db = 20 * np.log10(np.abs(amplitude) / reference)
 

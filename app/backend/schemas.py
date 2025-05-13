@@ -24,6 +24,7 @@ class SampleQueryInput(SQLModel):
     name: Optional[str] = None
     width: Optional[float] = None
     spectral_centroid: Optional[float] = None
+    path: Optional[Path] = None
 
 
 class SampleCreateInput(SQLModel):

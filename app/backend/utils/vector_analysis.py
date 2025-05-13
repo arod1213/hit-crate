@@ -7,17 +7,13 @@ import numpy as np
 def dtw_to_probability(dtw_distance):
     """
     Convert DTW distance to a probability-like similarity score.
-
-    Parameters:
-    - dtw_distance: The final DTW cost.
-    - mean_distance: The center point for the sigmoid.
-    - scale: Controls how quickly the sigmoid drops off.
-    - alpha: Adjusts the steepness of the sigmoid.
     """
-    if dtw_distance > 3000:
+    if dtw_distance > 3000:  # outside of acceptable range
         return 0
+
     k = 0.00462
     decay_rate = k * (dtw_distance - 1500)
+
     denom = 1 + math.e**decay_rate
     return 1 / denom
 

@@ -35,8 +35,27 @@ class Slider(QWidget):
         self.slider.sliderReleased.connect(self.update_store)
 
     def set_state(self, state: StoreState):
-        self.slider.setValue(getattr(state, self.subscribe_to))
+        print(f"to {self.subscribe_to}")
+        value = getattr(state, self.subscribe_to)
+        if value is None:
+            return
+        self.slider.setValue(value)
 
     def update_store(self):
-        # print(f"value is {self.slider.value()} {self.subscribe_to}")
+        print(f"value is {self.slider.value()} {self.subscribe_to}")
         self.store.set_state(self.subscribe_to, self.slider.value())
+
+    def reset(
+            self,
+            subscribe_to: str,
+            min_value: int,
+            max_value: int,
+            text_left: str,
+            text_right: str
+        ):
+        self.left_label.setText(text_left)
+        self.right_label.setText(text_right)
+        self.subscribe_to = subscribe_to
+        self.slider.setMinimum(min_value)
+        self.slider.setMaximum(max_value)
+        self.slider.setValue(getattr(self.store._state, subscribe_to))

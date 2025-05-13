@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
 from typing import Callable, Optional, Sequence
@@ -13,12 +14,24 @@ class FilterOptions:
 
 @dataclass
 class StoreState:
-    filters: FilterOptions = field(default_factory=FilterOptions)
+    # view
+    show_dirs: bool = False
+
+    # browser state
     selected_sample: Optional[Sample] = None
-    search_key: str = ""
-    spectral_centroid: int = 40
-    by_favorites: bool = False
     results: Sequence[Sample] | None = None
+    curr_path: Optional[Path] = None
+
+    # search
+    search_key: str = ""
+    spectral_centroid: Optional[int] = 40
+    stereo_width: Optional[int] = 0
+
+    # similar matching
+    filters: FilterOptions = field(default_factory=FilterOptions)
+    by_favorites: bool = False
+
+    # globals
     curr_page: int = 0
     lufs_target: float = -25
 
