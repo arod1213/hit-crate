@@ -68,11 +68,9 @@ class Settings(QWidget):
                 rescan_button = MenuButton(
                     text="rescan",
                     icon="assets/refresh-icon.svg",
-                    size=QSize(19, 19)
+                    size=QSize(19, 19),
                 )
-                rescan_button.clicked.connect(
-                    lambda _, p=dir.path: rescan(p)
-                )
+                rescan_button.clicked.connect(lambda _, p=dir.path: rescan(p))
                 # Delete Button
                 delete_button = MenuButton(
                     text="delete", icon="assets/close-icon.svg"

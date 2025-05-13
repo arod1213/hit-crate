@@ -99,3 +99,22 @@ QSlider::handle:horizontal {
     width: 20px;
     height: 20px;
 }
+
+QTreeView {
+background-color: transparent;
+border: 0px solid #ffffff;
+padding: 10px;
+font-size: 14px;
+color: #000000;
+}
+QTreeView::item {
+padding: 5px;
+border-radius: 3px;
+}
+QTreeView::item:hover {
+  background-color: #f0f0f0;
+}
+QTreeView::item:selected {
+background-color: #5BA7FF;  /* Tailwind-ish blue */
+color: white;
+}

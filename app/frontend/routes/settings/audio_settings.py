@@ -1,4 +1,7 @@
-from app.frontend.settings import load_auto_play_setting, save_auto_play_setting
+from app.frontend.settings import (
+    load_auto_play_setting,
+    save_auto_play_setting,
+)
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QPushButton,
@@ -16,8 +19,8 @@ class AudioSettings(QWidget):
 
         is_auto_play = load_auto_play_setting()
         self.auto_play = QPushButton(text="Auto Play")
-        self.auto_play.setChecked(is_auto_play)
         self.auto_play.setCheckable(True)
+        self.auto_play.setChecked(is_auto_play)
         self.auto_play.clicked.connect(
             lambda x=not is_auto_play: self.update_auto_play(x)
         )

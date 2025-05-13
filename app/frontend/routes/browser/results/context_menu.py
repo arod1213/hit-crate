@@ -28,6 +28,17 @@ class ContextMenu(QMenu):
         similar_action.triggered.connect(self.find_similar)
         self.addAction(similar_action)
 
+        path_action = QAction("Show all in path", self)
+        path_action.triggered.connect(self.show_in_path)
+        self.addAction(path_action)
+
+    def show_in_path(self):
+        parent_path = Path(self.sample.path).parent
+        # with Session(engine) as db_session:
+        #     data = SampleService(db_session).query_by_parent(parent_path)
+        self.store.set_state("curr_path", parent_path)
+        # self.store.set_state("results", data)
+
     def set_favorite(self):
         with Session(engine) as session:
             updated_sample = SampleService(session).update(

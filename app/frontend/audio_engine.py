@@ -90,7 +90,9 @@ class AudioEngine:
             lufs = self.sample.lufs
             if lufs:
                 target_lufs = self._store._state.lufs_target
-                target_gain = amp_to_target_lufs(curr_lufs=lufs, target=target_lufs)
+                target_gain = amp_to_target_lufs(
+                    curr_lufs=lufs, target=target_lufs
+                )
                 if target_gain > 1:
                     buffer = amplify_audio(self.sample.path, target_gain)
                     self.sound = pygame.mixer.Sound(buffer)

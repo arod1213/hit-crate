@@ -3,8 +3,8 @@ import numpy as np
 from pathlib import Path
 from app.backend.utils.audio.freq import spectral_centroid, rolloff
 
-FILE_A = Path.home() / 'Desktop' / 'Scan Test' / 'bright3.wav'
-FILE_B = Path.home() / 'Desktop' / 'Scan Test' / 'dark2.wav'
+FILE_A = Path.home() / "Desktop" / "Scan Test" / "bright3.wav"
+FILE_B = Path.home() / "Desktop" / "Scan Test" / "dark2.wav"
 
 
 def filter_nan(arr):
@@ -30,7 +30,7 @@ def amp_to_db(amplitude, reference=1.0):
         The amplitude in dB
     """
     # Avoid log of zero or negative values
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         # Formula: dB = 20 * log10(amplitude/reference)
         db = 20 * np.log10(np.abs(amplitude) / reference)
 
@@ -89,7 +89,7 @@ def smart_filter(arr: np.ndarray):
 
 files = [FILE_A, FILE_B]
 for f in files:
-    y, sr = librosa.load(f, mono=True, res_type='soxr_lq')
+    y, sr = librosa.load(f, mono=True, res_type="soxr_lq")
     y = normalize_audio(y)
     S = librosa.feature.melspectrogram(y=y, sr=sr)
     centroid = spectral_centroid(S)

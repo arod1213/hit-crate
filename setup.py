@@ -10,18 +10,22 @@ os.environ['MACOSX_DEPLOYMENT_TARGET'] = '14.0'
 
 from setuptools import setup
 
-APP = ['app/main.py']
+APP = ['main.py']
 DATA_FILES = [
     ('assets', [
         'assets/arrow-back-icon.svg',
         'assets/close-icon.svg',
+        'assets/dice-icon.svg',
         'assets/folder-icon.svg',
         'assets/freq-icon.svg',
         'assets/heart-icon-fill.svg',
         'assets/heart-icon.svg',
+        'assets/list-icon.svg',
+        'assets/power-icon.svg',
         'assets/refresh-icon.svg',
         'assets/settings-icon.svg',
         'assets/stereo-icon.svg',
+        'assets/switch-icon.svg',
     ]),
 ]
 OPTIONS = {
@@ -41,8 +45,8 @@ OPTIONS = {
         'CFBundleName': 'Hit Crate',
         'CFBundleDisplayName': 'Hit Crate',
         'CFBundleIdentifier': 'com.aidanrodriguez.hitcrate',
-        'CFBundleVersion': '1.0.3',
-        'CFBundleShortVersionString': '1.0.3'
+        'CFBundleVersion': '1.0.4',
+        'CFBundleShortVersionString': '1.0.4'
     },
     'iconfile': 'assets/vinyl-icon.icns',
     'excludes': ['wheel', 'tkinter', 'matplotlib', 'PyInstaller'],
@@ -61,7 +65,7 @@ setup(
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     name="Hit Crate",
-    version="1.0.3",
+    version="1.0.4",
     author="Aidan Rodriguez",
     author_email="aidan@aidanrodriguez.com",
     license="MIT",

@@ -18,4 +18,3 @@ class AudioMeta:
         self.duration: float = info.duration
         self.sample_rate = info.samplerate
         self.channels = info.channels
-

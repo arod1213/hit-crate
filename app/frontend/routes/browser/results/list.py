@@ -51,9 +51,7 @@ class ResultList(QWidget):
         self.store.subscribe("results", self.reset_scrollbar)
 
         # handle selection of sample
-        self.results_list.currentItemChanged.connect(
-            self.handle_select_sample
-        )
+        self.results_list.currentItemChanged.connect(self.handle_select_sample)
         # self.results_list.itemClicked.connect(
         #     self.handle_select_sample
         # )
@@ -63,7 +61,9 @@ class ResultList(QWidget):
         )
         self.backslash_shortcut.activated.connect(self.find_similar)
         self.space_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
-        self.space_shortcut.activated.connect(lambda x=None: self.play_sample(x))
+        self.space_shortcut.activated.connect(
+            lambda x=None: self.play_sample(x)
+        )
 
     def show_context_menu(self, position):
         item = self.results_list.itemAt(position)

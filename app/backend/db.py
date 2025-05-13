@@ -31,15 +31,15 @@ def migrate_database():
     """Handle schema migrations for existing user databases"""
     inspector = inspect(engine)
 
-    if 'sample' in inspector.get_table_names():
-        columns = [col['name'] for col in inspector.get_columns('sample')]
+    if "sample" in inspector.get_table_names():
+        columns = [col["name"] for col in inspector.get_columns("sample")]
 
         with engine.begin() as conn:
-            if 'rolloff' not in columns:
+            if "rolloff" not in columns:
                 print("Adding rolloff column to sample table")
-                conn.execute(text(
-                    "ALTER TABLE sample ADD COLUMN rolloff FLOAT"
-                ))
+                conn.execute(
+                    text("ALTER TABLE sample ADD COLUMN rolloff FLOAT")
+                )
 
 
 def create_db_and_tables():

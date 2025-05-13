@@ -10,7 +10,7 @@ class MenuButton(QPushButton):
         self,
         text: str = "",
         icon: Optional[str] = None,
-        size: Optional[QSize] = None
+        size: Optional[QSize] = None,
     ):
         super().__init__()
         self.setCheckable(False)

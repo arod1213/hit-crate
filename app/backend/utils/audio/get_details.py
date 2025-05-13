@@ -8,7 +8,13 @@ import soundfile as sf
 from app.backend.utils.audio.gain import get_lufs
 from .freq import rolloff, spectral_centroid, mfcc
 from .width import get_stereo_width
-from .core import normalize_audio, filter_frequency_data, pad_audio, load_audio, get_median
+from .core import (
+    normalize_audio,
+    filter_frequency_data,
+    pad_audio,
+    load_audio,
+    get_median,
+)
 
 
 class AudioDetail:
@@ -29,14 +35,13 @@ class AudioDetail:
         else:
             self.stereo_width = get_stereo_width(str(path))
 
-
         normalized_audio = normalize_audio(audio, floor_db=-35)
         normalized_audio = pad_audio(normalized_audio)
         if len(normalized_audio) == 0:
             raise ValueError(
                 "Invalid audio: likely silent even after normalization"
-                             )
-        
+            )
+
         mel_spec = librosa.feature.melspectrogram(y=normalized_audio, sr=sr)
         S = spectral_centroid(mel_spec)
         S_filtered = filter_frequency_data(S)
@@ -49,5 +54,8 @@ class AudioDetail:
         if len(R_filtered) != 0:
             R = R_filtered
         R_max_values = np.sort(R)[-3:]
-        self.rolloff = np.median(R_max_values)
-
+        if len(R_max_values) == 0:
+            raise ValueError(
+                "Rolloff could not be calculated as array is too small"
+            )
+        self.rolloff = float(np.median(R_max_values))
