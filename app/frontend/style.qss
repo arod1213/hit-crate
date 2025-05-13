@@ -102,18 +102,21 @@ QSlider::handle:horizontal {
 
 QTreeView {
 background-color: transparent;
-border: 0px solid #ffffff;
+border: 1px solid #B6B5B5;
 padding: 10px;
 font-size: 14px;
 color: #000000;
+border-radius: 10px;
 }
+
 QTreeView::item {
 padding: 5px;
-border-radius: 3px;
 }
+
 QTreeView::item:hover {
   background-color: #f0f0f0;
 }
+
 QTreeView::item:selected {
 background-color: #5BA7FF;  /* Tailwind-ish blue */
 color: white;

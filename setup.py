@@ -45,8 +45,8 @@ OPTIONS = {
         'CFBundleName': 'Hit Crate',
         'CFBundleDisplayName': 'Hit Crate',
         'CFBundleIdentifier': 'com.aidanrodriguez.hitcrate',
-        'CFBundleVersion': '1.0.4',
-        'CFBundleShortVersionString': '1.0.4'
+        'CFBundleVersion': '1.0.5',
+        'CFBundleShortVersionString': '1.0.5'
     },
     'iconfile': 'assets/vinyl-icon.icns',
     'excludes': ['wheel', 'tkinter', 'matplotlib', 'PyInstaller'],
@@ -65,7 +65,7 @@ setup(
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     name="Hit Crate",
-    version="1.0.4",
+    version="1.0.5",
     author="Aidan Rodriguez",
     author_email="aidan@aidanrodriguez.com",
     license="MIT",
