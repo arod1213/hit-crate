@@ -35,14 +35,14 @@ class Slider(QWidget):
         self.slider.sliderReleased.connect(self.update_store)
 
     def set_state(self, state: StoreState):
-        print(f"to {self.subscribe_to}")
+        # print(f"to {self.subscribe_to}")
         value = getattr(state, self.subscribe_to)
         if value is None:
             return
         self.slider.setValue(value)
 
     def update_store(self):
-        print(f"value is {self.slider.value()} {self.subscribe_to}")
+        # print(f"value is {self.slider.value()} {self.subscribe_to}")
         self.store.set_state(self.subscribe_to, self.slider.value())
 
     def reset(
