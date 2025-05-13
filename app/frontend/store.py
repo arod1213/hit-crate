@@ -25,7 +25,7 @@ class StoreState:
     # search
     search_key: str = ""
     spectral_centroid: Optional[int] = 40
-    stereo_width: Optional[int] = 0
+    stereo_width: Optional[int] = None
 
     # similar matching
     filters: FilterOptions = field(default_factory=FilterOptions)
