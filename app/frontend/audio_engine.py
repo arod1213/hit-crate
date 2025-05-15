@@ -54,19 +54,20 @@ class AudioEngine:
         """Load the audio file.
         Returns False if audio should be stopped and true if ready to be played
         """
+        # stop playing audio
+        self.stop()
         if str(self.file_path) == sample.path:
             if self.is_playing:
-                self.stop()
                 return False
             return True
 
-        if self.is_playing:
-            self.stop()
         file_path = Path(sample.path)
-        if file_path.exists():
-            self.sample = sample
-            self.file_path = file_path
-            self.sound = pygame.mixer.Sound(str(file_path))
+        if not file_path.exists():
+            return False
+
+        self.sample = sample
+        self.file_path = file_path
+        self.sound = pygame.mixer.Sound(str(file_path))
         return True
 
     def play(self):
