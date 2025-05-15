@@ -103,12 +103,11 @@ class ResultList(QWidget):
         if sample is None:
             sample = self.store._state.selected_sample
 
-        if sample is not None:
-            can_play = self.audio_player.load_audio(sample)
-            if can_play:
-                self.audio_player.play()
-            else:
-                self.audio_player.stop()
+        can_play = self.audio_player.load_audio(sample)
+        if can_play:
+            self.audio_player.play()
+        else:
+            self.audio_player.stop()
 
     def refresh_results(self, state: StoreState):
         self.results_list.clear()

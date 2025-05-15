@@ -1,10 +1,11 @@
 import librosa
 import numpy as np
 from pathlib import Path
+from app.backend.utils.audio.checks import is_one_shot
 from app.backend.utils.audio.freq import spectral_centroid, rolloff
 
-FILE_A = Path.home() / "Desktop" / "Scan Test" / "bright3.wav"
-FILE_B = Path.home() / "Desktop" / "Scan Test" / "dark2.wav"
+FILE_A = Path.home() / "Desktop" / "Scan Test" / "loop.wav"
+FILE_B = Path.home() / "Desktop" / "Scan Test" / "loop2.wav"
 
 
 def filter_nan(arr):
@@ -89,22 +90,23 @@ def smart_filter(arr: np.ndarray):
 
 files = [FILE_A, FILE_B]
 for f in files:
-    y, sr = librosa.load(f, mono=True, res_type="soxr_lq")
-    y = normalize_audio(y)
-    S = librosa.feature.melspectrogram(y=y, sr=sr)
-    centroid = spectral_centroid(S)
-    roll = rolloff(y, sr)
-
-    centroid = smart_filter(centroid)
-    roll = smart_filter(roll)
-    # print(f"roll is {roll}")
-    # print(f"roll max is {np.max(roll)}")
-    roll = np.sort(roll)[-3:]
-
-    value = centroid
-    print(f"{f.name} PROPERTIES")
-    print(f"centroid is {centroid}")
-    print(f"rolloff is {roll}")
+    rms = is_one_shot(f)
+    # y, sr = librosa.load(f, mono=True, res_type="soxr_lq")
+    # y = normalize_audio(y)
+    # S = librosa.feature.melspectrogram(y=y, sr=sr)
+    # centroid = spectral_centroid(S)
+    # roll = rolloff(y, sr)
+    #
+    # centroid = smart_filter(centroid)
+    # roll = smart_filter(roll)
+    # # print(f"roll is {roll}")
+    # # print(f"roll max is {np.max(roll)}")
+    # roll = np.sort(roll)[-3:]
+    #
+    # value = centroid
+    # print(f"{f.name} PROPERTIES")
+    # print(f"centroid is {centroid}")
+    # print(f"rolloff is {roll}")
     # print(f"Mean: {np.mean(roll):.2f} - {np.mean(centroid):.2f}")
     # print(f"Median: {np.median(roll):.2f} - {np.median(centroid):.2f}")
     # print(f"Stdev: {np.std(roll):.2f} - {np.std(centroid):.2f}")

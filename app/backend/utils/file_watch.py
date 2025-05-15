@@ -3,13 +3,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-import soundfile as sf
 from sqlmodel import Session
 
 from app.backend.db import engine
 from app.backend.models import Sample
 from app.backend.schemas import AudioFormat
 from app.backend.services.sample_service import SampleService
+from app.backend.utils.audio.checks import is_one_shot
 
 
 def scan_dir(path: Path):
@@ -38,27 +38,25 @@ def check_file(
     parent_path: Path,
     session: Session,
 ) -> bool:
-    try:
-        if sf.info(str(path)).duration > 5:  # only load short samples
-            return False
+    if not is_one_shot(path):
+        return False
+    # if sf.info(str(path)).duration > 5:  # only load short samples
+    #     return False
 
-        m_time_float = os.path.getmtime(path)
-        modified_at = datetime.fromtimestamp(m_time_float)
+    m_time_float = os.path.getmtime(path)
+    modified_at = datetime.fromtimestamp(m_time_float)
 
-        if matching_sample:
-            if modified_at != matching_sample.modified_at:
-                print(f"{matching_sample.path} is being updated")
-                SampleService(session).update(path, is_favorite=None)
-                session.commit()
-                return True
-        else:
-            print(f"{path} does not exist - creating file")
-            SampleService(session).create(path, parent_path)
+    if matching_sample:
+        if modified_at != matching_sample.modified_at:
+            print(f"{matching_sample.path} is being updated")
+            SampleService(session).update(path, is_favorite=None)
             session.commit()
             return True
-    except sf.LibsndfileError:
-        print(f"{path} could not be opened with soundfile")
-        return False
+    else:
+        print(f"{path} does not exist - creating file")
+        SampleService(session).create(path, parent_path)
+        session.commit()
+        return True
     return True
 
 
