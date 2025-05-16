@@ -30,3 +30,4 @@ class Signals(QObject):
         if not hasattr(self, '_initialized'):
             self._initialized = True
             self.directory_added = Signal()
+            self.directory_removed = Signal()
