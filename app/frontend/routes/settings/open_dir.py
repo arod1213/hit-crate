@@ -11,7 +11,6 @@ from sqlmodel import Session
 
 
 class OpenDir(QPushButton):
-
     def __init__(self):
         super().__init__()
         self.initUI()

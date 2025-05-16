@@ -13,10 +13,10 @@ from .db import engine
 def run_initial_scan():
     with Session(engine, expire_on_commit=False) as session:
         dirs = DirectoryService(session).query_directories()
-        paths = [Path(d.path) for d in dirs]
+        paths = (Path(d.path) for d in dirs)
 
     with ThreadPoolExecutor(
-        max_workers=5, thread_name_prefix="scan_worker"
+        max_workers=64, thread_name_prefix="scan_worker"
     ) as executor:
         for path in paths:
             executor.submit(scan_dir, path)

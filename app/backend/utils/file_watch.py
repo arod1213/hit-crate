@@ -24,10 +24,10 @@ def scan_dir(path: Path):
             if not file.is_file():
                 continue
             matching_sample = existing_samples.get(str(file))
-            file_added = check_file(
+            is_file_added = check_file(
                 file, matching_sample, parent_path=path, session=session
             )
-            if not file_added:
+            if not is_file_added:
                 matching_sample = existing_samples.get(str(file))
                 SampleService(session).delete(file)
 
@@ -40,8 +40,6 @@ def check_file(
 ) -> bool:
     if not is_one_shot(path):
         return False
-    # if sf.info(str(path)).duration > 5:  # only load short samples
-    #     return False
 
     m_time_float = os.path.getmtime(path)
     modified_at = datetime.fromtimestamp(m_time_float)
