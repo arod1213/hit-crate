@@ -34,6 +34,9 @@ class Slider(QWidget):
         self.store.subscribe(subscribe_to, self.set_state)
         self.slider.sliderReleased.connect(self.update_store)
 
+        default = getattr(self.store._state, self.subscribe_to, 0)
+        self.slider.setValue(default)
+
     def set_state(self, state: StoreState):
         # print(f"to {self.subscribe_to}")
         value = getattr(state, self.subscribe_to)
