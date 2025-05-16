@@ -1,7 +1,9 @@
-import numpy as np
-from typing import Tuple
-import librosa
 from pathlib import Path
+from typing import Tuple
+
+import librosa
+import numpy as np
+
 from app.backend.models import AudioFormat
 
 

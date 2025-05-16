@@ -1,20 +1,20 @@
 from pathlib import Path
-from typing import Tuple
 
 import librosa
 import numpy as np
 import soundfile as sf
 
 from app.backend.utils.audio.gain import get_lufs
-from .freq import rolloff, spectral_centroid, mfcc
-from .width import get_stereo_width
+
 from .core import (
-    normalize_audio,
     filter_frequency_data,
-    pad_audio,
-    load_audio,
     get_median,
+    load_audio,
+    normalize_audio,
+    pad_audio,
 )
+from .freq import mfcc, rolloff, spectral_centroid
+from .width import get_stereo_width
 
 
 class AudioDetail:

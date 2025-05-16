@@ -1,8 +1,9 @@
+from pathlib import Path
 from typing import Tuple
+
+import librosa
 import numpy as np
 import soundfile as sf
-import librosa
-from pathlib import Path
 
 
 def is_one_shot(path: Path) -> bool:

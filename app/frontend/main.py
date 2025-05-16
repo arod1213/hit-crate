@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QSplitter, QStackedWidget, QWidget
+from PyQt6.QtWidgets import QMainWindow, QSplitter, QStackedWidget
 
 from app.frontend.routes.browser.main import Browser
 from app.frontend.routes.folder_tree.main import FolderTree

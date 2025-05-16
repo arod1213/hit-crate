@@ -1,6 +1,6 @@
-from pathlib import Path
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 from typing import Callable, Optional, Sequence
 
 from app.backend.models import Sample

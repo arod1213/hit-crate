@@ -1,15 +1,14 @@
 from typing import Optional
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
 import numpy as np
 from app.frontend.components import Slider
 from app.frontend.components.wave_display import WaveDisplay
 from app.frontend.routes.browser.search.sort_slider import SortSlider
 from app.frontend.store import Store, StoreState
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QHBoxLayout,
-    QLabel,
     QPushButton,
     QSizePolicy,
     QVBoxLayout,

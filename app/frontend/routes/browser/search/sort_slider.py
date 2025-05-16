@@ -1,12 +1,10 @@
 from dataclasses import dataclass
-from typing import Dict, Optional
-
-from PyQt6.QtCore import QSize
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QWidget
 
 from app.frontend.components.slider import Slider
 from app.frontend.store import Store, StoreState
+from PyQt6.QtCore import QSize
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QWidget
 
 
 @dataclass

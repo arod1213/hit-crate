@@ -1,23 +1,27 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QStandardItem, QStandardItemModel
-from sqlmodel import Session
 import os
 from pathlib import Path
-from app.frontend.store import Store
-from app.backend.services import DirectoryService
+
 from app.backend.db import engine
+from app.backend.services import DirectoryService
+from app.frontend.signals import Signals
+from app.frontend.store import Store
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QSizePolicy,
     QTreeView,
     QVBoxLayout,
     QWidget,
 )
+from sqlmodel import Session
 
 
 class FolderTree(QWidget):
     def __init__(self):
         super().__init__()
         self.store = Store()
+        self.signals = Signals()
+
         self.setMinimumWidth(200)
         self.setSizePolicy(
             QSizePolicy.Policy.Minimum,
@@ -37,11 +41,20 @@ class FolderTree(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.tree_view)
+        self.rescan()
         self.setLayout(layout)
+        self.signals.directory_added.connect(self.rescan)
+
+    def rescan(self):
+        print("RESACN")
+        # Clear the current model
+        self.model.clear()
+        self.model.setHorizontalHeaderLabels(["Folders"])
 
         # Add top-level user-selected folders
         with Session(engine) as session:
             folder_paths = DirectoryService(session).query_directories()
+            print(f"FOUND {len(folder_paths)} folders")
             for path in folder_paths:
                 self.add_top_level_folder(Path(path.path))
 

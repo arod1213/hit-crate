@@ -2,7 +2,7 @@ from pathlib import Path
 
 from app.backend.db import engine
 from app.backend.services import DirectoryService
-from PyQt6.QtCore import pyqtSignal
+from app.frontend.signals import Signals
 from PyQt6.QtWidgets import (
     QFileDialog,
     QPushButton,
@@ -11,12 +11,12 @@ from sqlmodel import Session
 
 
 class OpenDir(QPushButton):
-    directory_added = pyqtSignal()
 
     def __init__(self):
         super().__init__()
         self.initUI()
         self.setText("Add Directory")
+        self.signals = Signals()
 
     def initUI(self):
         self.clicked.connect(self.openFileDialog)
@@ -38,4 +38,4 @@ class OpenDir(QPushButton):
     def create_dir(self, path: Path):
         with Session(engine) as db_session:
             DirectoryService(db_session).create(path)
-        self.directory_added.emit()
+        self.signals.directory_added.emit()

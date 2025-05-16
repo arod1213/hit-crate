@@ -1,8 +1,7 @@
-import librosa
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 from app.backend.utils.audio.checks import is_one_shot
-from app.backend.utils.audio.freq import spectral_centroid, rolloff
 
 FILE_A = Path.home() / "Desktop" / "Scan Test" / "loop.wav"
 FILE_B = Path.home() / "Desktop" / "Scan Test" / "loop2.wav"
