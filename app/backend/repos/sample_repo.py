@@ -57,10 +57,9 @@ class SampleRepo:
             order_conditions.append(Sample.name.asc())
 
         # general metadata
-        if input.name and input.name != "":
-            conditions.append(
-                func.lower(Sample.name).like(f"%{input.name.lower()}%")
-            )
+        if input.name and input.name.strip():
+            for word in input.name.lower().split():
+                conditions.append(func.lower(Sample.name).like(f"%{word}%"))
         if input.is_favorite is True:
             conditions.append(Sample.is_favorite == True)
         if input.path is not None:
