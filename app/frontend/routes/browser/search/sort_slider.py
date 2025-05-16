@@ -24,20 +24,20 @@ class SortSlider(QWidget):
         super().__init__()
 
         self.subscriptable_values = {
-            'spectral_centroid': SubscriptableValue(
-                text_left='dark',
-                text_right='bright',
+            "spectral_centroid": SubscriptableValue(
+                text_left="dark",
+                text_right="bright",
                 min=40,
                 max=8000,
-                default_value=40
+                default_value=40,
             ),
-            'stereo_width': SubscriptableValue(
-                text_left='mono',
-                text_right='wide',
+            "stereo_width": SubscriptableValue(
+                text_left="mono",
+                text_right="wide",
                 min=0,
                 max=200,
-                default_value=0
-            )
+                default_value=0,
+            ),
         }
         self.sub = self.subscriptable_values[subscribe_to]
         if self.sub is None:

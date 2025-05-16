@@ -46,13 +46,13 @@ class Slider(QWidget):
         self.store.set_state(self.subscribe_to, self.slider.value())
 
     def reset(
-            self,
-            subscribe_to: str,
-            min_value: int,
-            max_value: int,
-            text_left: str,
-            text_right: str
-        ):
+        self,
+        subscribe_to: str,
+        min_value: int,
+        max_value: int,
+        text_left: str,
+        text_right: str,
+    ):
         self.left_label.setText(text_left)
         self.right_label.setText(text_right)
         self.subscribe_to = subscribe_to

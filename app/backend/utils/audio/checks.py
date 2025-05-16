@@ -45,14 +45,14 @@ def rms_envelope(audio: np.ndarray, sr: int | float) -> Tuple[np.ndarray, int]:
         start = i * hop_size
         end = start + window_size
         frame = audio[start:end]
-        rms_values[i] = np.sqrt(np.mean(frame ** 2))
+        rms_values[i] = np.sqrt(np.mean(frame**2))
 
     return rms_values, num_frames
 
 
 def rms_energy(rms_values: np.ndarray, num_frames: int):
     peak_rms = np.max(rms_values)
-    end_energy = np.mean(rms_values[-int(num_frames / 3):])
+    end_energy = np.mean(rms_values[-int(num_frames / 3) :])
     if end_energy == 0:
         if peak_rms == 0:
             return False
