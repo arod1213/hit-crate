@@ -4,6 +4,7 @@ from pathlib import Path
 from app.backend.db import engine
 from app.backend.services import DirectoryService
 from app.frontend.components import ToggleView
+from app.frontend.signals import Signals
 from app.frontend.store import Store
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QIcon
@@ -47,8 +48,9 @@ class Settings(QWidget):
     def setup_ui(self):
         audio_settings = AudioSettings()
         self.main_layout.addWidget(audio_settings)
+        signals = Signals()
+        signals.directory_added.connect(self.refresh_ui)
         dir_sel = OpenDir()
-        dir_sel.directory_added.connect(self.refresh_ui)
         self.main_layout.addWidget(dir_sel)
 
         with Session(engine) as db_session:
