@@ -44,9 +44,9 @@ class FolderTree(QWidget):
         self.rescan()
         self.setLayout(layout)
         self.signals.directory_added.connect(self.rescan)
+        self.signals.directory_removed.connect(self.rescan)
 
     def rescan(self):
-        print("RESACN")
         # Clear the current model
         self.model.clear()
         self.model.setHorizontalHeaderLabels(["Folders"])
@@ -54,7 +54,6 @@ class FolderTree(QWidget):
         # Add top-level user-selected folders
         with Session(engine) as session:
             folder_paths = DirectoryService(session).query_directories()
-            print(f"FOUND {len(folder_paths)} folders")
             for path in folder_paths:
                 self.add_top_level_folder(Path(path.path))
 
