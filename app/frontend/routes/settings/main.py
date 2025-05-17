@@ -3,8 +3,8 @@ from pathlib import Path
 
 from app.backend.db import engine
 from app.backend.services import DirectoryService
+from app.frontend.signals import signals
 from app.frontend.components import ToggleView
-from app.frontend.signals import Signals
 from app.frontend.store import Store
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QIcon
@@ -36,7 +36,6 @@ class Settings(QWidget):
         super().__init__()
 
         self.store = Store()
-        self.signals = Signals()
 
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -49,7 +48,7 @@ class Settings(QWidget):
     def setup_ui(self):
         audio_settings = AudioSettings()
         self.main_layout.addWidget(audio_settings)
-        self.signals.directory_added.connect(self.refresh_ui)
+        signals.directory_added.connect(self.refresh_ui)
         dir_sel = OpenDir()
         self.main_layout.addWidget(dir_sel)
 
@@ -109,4 +108,4 @@ class Settings(QWidget):
         with Session(engine) as db_session:
             DirectoryService(db_session).delete(path)
         self.refresh_ui()
-        self.signals.directory_removed.emit()
+        signals.directory_removed.emit()

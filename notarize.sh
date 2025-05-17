@@ -11,10 +11,10 @@ ZIP_NAME="dist/Hit Crate.zip"
 
 
 cd ~/documents/github/hit-crate
-# rm -rf dist
-# rm -rf build
-#
-# python3 setup.py py2app
+sudo rm -rf dist
+sudo rm -rf build
+
+python3 setup.py py2app
 
 
 echo "Unzipping necessary files"
@@ -80,15 +80,6 @@ codesign --verify --verbose "$APP_PATH"
 echo "🔍 Running spctl assessment..."
 spctl --assess --verbose=4 "$APP_PATH"
 
-
-
-# echo "📦 Zipping the .app bundle..."
-# rm -f "$ZIP_NAME"
-# ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
-#
-# echo "📤 Submitting ZIP for notarization..."
-# xcrun notarytool submit "$ZIP_NAME" --keychain-profile "$KEYCHAIN_PROFILE" --wait
-
 PKG_NAME="HitCrateInstaller.pkg"
 /usr/bin/productbuild \
   --component "$APP_PATH" /Applications \
@@ -98,18 +89,9 @@ PKG_NAME="HitCrateInstaller.pkg"
 echo "📤 Submitting .pkg for notarization..."
 xcrun notarytool submit "$PKG_NAME" --keychain-profile "$INSTALLER_PROFILE" --wait
 xcrun stapler staple "$PKG_NAME"
+xcrun stapler validate "$PKG_NAME"
 
-# echo "📎 Stapling the .app..."
-# xcrun stapler staple "$APP_PATH"
-
-# echo "📦 Creating DMG using create-dmg..."
-# rm -f "$DMG_NAME"
-# create-dmg --app-drop-link 150 150 "$DMG_NAME" "$APP_PATH"
-#
-# echo "📝 Signing the DMG..."
-# codesign --force --sign "$IDENTITY" --timestamp "$DMG_NAME"
-#
-# echo "📎 Stapling the notarization ticket to DMG..."
-# xcrun stapler staple "$DMG_NAME"
+echo "📎 Stapling the .app..."
+xcrun stapler staple "$APP_PATH"
 
 echo "✅ Done"

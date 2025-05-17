@@ -110,11 +110,10 @@ class AudioEngine:
 
     def stop(self):
         """Stop the audio."""
-        if self.channel is not None:
-            self.channel.stop()
-            self.is_playing = False
-        # else:
-        #     print("No audio is currently loaded.")
+        if self.channel is None:
+            return
+        self.channel.stop()
+        self.is_playing = False
 
     def is_audio_playing(self):
         """Check if the audio is currently playing."""

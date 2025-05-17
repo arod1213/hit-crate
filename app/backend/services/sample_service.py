@@ -1,9 +1,12 @@
+import os
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
 
 from sqlmodel import Session
 
 from app.backend.repos.directory_repo import DirectoryRepo
+from app.backend.utils.audio.checks import is_one_shot
 from app.backend.utils.to_bytes import array_to_bytes
 
 from ..models import Sample
@@ -63,32 +66,17 @@ class SampleService:
             )
         )
 
-    def rescan(self, path: Path):
-        if not path.exists():
-            self.delete(path)
-            return
-        metadata = AudioMeta(path)
-        if metadata.format is None:  # if unsupported
-            raise ValueError(f"{metadata.format} is unsupported")
-        detail = AudioDetail(path)
-        input = SampleUpdateInput(
-            sample_rate=metadata.sample_rate,
-            lufs=detail.lufs,
-            stereo_width=detail.stereo_width,
-            mfcc=array_to_bytes(detail.mfcc),
-            spectral_centroid=detail.spectral_centroid,
-            rolloff=detail.rolloff,
-        )
-        return self.repo.update(path, input)
-
-    def update(self, path: Path, is_favorite: Optional[bool]):
+    def update(
+        self, path: Path, is_favorite: Optional[bool]
+    ) -> Optional[Sample]:
         if not path.is_file():
             return
 
         metadata = AudioMeta(path)
         if metadata.format is None:  # if unsupported
-            # delete file here ?
+            self.delete(path)
             return
+
         detail = AudioDetail(path)
 
         input = SampleUpdateInput(
@@ -111,3 +99,16 @@ class SampleService:
         if not found_file:
             return
         return self.repo.delete(path)
+
+    def rescan(self, path: Path, parent_path: Path, matching_sample: Optional[Sample]):
+        if not is_one_shot(path):
+            if matching_sample:
+                self.delete(path)
+            return
+        if matching_sample:
+            m_time_float = os.path.getmtime(path)
+            modified_at = datetime.fromtimestamp(m_time_float)
+            if modified_at != matching_sample.modified_at:
+                self.update(path, is_favorite=None)
+        else:
+            self.create(path, parent_path)

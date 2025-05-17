@@ -1,11 +1,10 @@
 import sys
 import threading
 
-from PyQt6.QtWidgets import QApplication
-
 from app.backend.db import create_db_and_tables
-from app.backend.watcher import run_initial_scan
+from app.backend.scan.watcher import run_initial_scan
 from app.frontend.main import BrowserApp
+from PyQt6.QtWidgets import QApplication
 
 
 def main():

@@ -4,7 +4,7 @@ from typing import Tuple
 
 from app.backend.db import engine
 from app.backend.services import DirectoryService
-from app.frontend.signals import Signals
+from app.frontend.signals import signals
 from app.frontend.store import Store
 from PyQt6.QtCore import QModelIndex, Qt
 from PyQt6.QtGui import QStandardItem, QStandardItemModel
@@ -21,7 +21,6 @@ class FolderTree(QWidget):
     def __init__(self):
         super().__init__()
         self.store = Store()
-        self.signals = Signals()
 
         self.setMinimumWidth(200)
         self.setSizePolicy(
@@ -43,8 +42,6 @@ class FolderTree(QWidget):
         layout.addWidget(self.tree_view)
         self.rescan()
         self.setLayout(layout)
-        self.signals.directory_added.connect(self.rescan)
-        self.signals.directory_removed.connect(self.rescan)
         self.store.subscribe(
             "curr_path",
             lambda x=self.store._state: self.go_to_path(x.curr_path),
@@ -153,6 +150,8 @@ class FolderTree(QWidget):
         selection_model = self.tree_view.selectionModel()
         assert selection_model is not None
         selection_model.selectionChanged.connect(self.on_selection_changed)
+        signals.directory_added.connect(self.rescan)
+        signals.directory_removed.connect(self.rescan)
 
     def on_selection_changed(self, selected, _):
         selected_indexes = selected.indexes()
