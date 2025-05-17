@@ -10,6 +10,8 @@ def is_one_shot(path: Path) -> bool:
     """
     Return: true if one shot else false
     """
+    if not path.is_file():
+        return False
     try:
         metadata = sf.info(path)
         # if short file
@@ -27,7 +29,6 @@ def is_one_shot(path: Path) -> bool:
         rms_feature = rms_energy(rms_values, num_frames)
         if rms_feature > 50:
             return True
-        # print(f"{path} is a loop")
         return False
     except sf.LibsndfileError:
         print(f"{path} could not be opened with soundfile")

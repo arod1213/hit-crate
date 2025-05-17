@@ -5,8 +5,8 @@ from typing import Optional
 from sqlmodel import Session
 
 from app.backend.repos.directory_repo import DirectoryRepo
+from app.backend.scan.valid import get_valid_files
 from app.backend.services.sample_service import SampleService
-from app.backend.utils.file_watch import scan_dir
 
 from ..models import Directory
 
@@ -27,14 +27,21 @@ class DirectoryService:
         new_dir = self.repo.create(path)
         if new_dir is not None:
             new_thread = threading.Thread(
-                target=scan_dir, args=(path,), daemon=True
+                target=self.rescan, args=(path,), daemon=True
             )
             new_thread.start()
 
-    def rescan(self, path: Path):
-        samples = self.sample_service.query_by_parent(path)
-        for s in samples:
-            self.sample_service.rescan(Path(s.path))
-
     def delete(self, path: str):
         return self.repo.delete(path)
+
+    def rescan(self, path: Path):
+        child_samples = self.sample_service.query_by_parent(path)
+        existing_samples = {sample.path: sample for sample in child_samples}
+
+        valid_files = get_valid_files(path)
+
+        for file in valid_files:
+            if not file.is_file():
+                continue
+            matching_sample = existing_samples.get(str(file))
+            self.sample_service.rescan(path, file, matching_sample)
