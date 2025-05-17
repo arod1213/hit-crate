@@ -28,9 +28,7 @@ class Browser(QWidget):
         self.waveform: Optional[np.ndarray] = None
 
         self.setMinimumWidth(400)
-        self.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         main_layout = QVBoxLayout(self)
 
@@ -78,9 +76,7 @@ class Browser(QWidget):
         )
         self.store.subscribe("curr_path", self.update_path)
         self.path.clicked.connect(self.reset_path)
-        main_layout.addWidget(
-            self.path, alignment=Qt.AlignmentFlag.AlignHCenter
-        )
+        main_layout.addWidget(self.path, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         bottom_widget = QWidget()
         bottom_layout = QHBoxLayout(bottom_widget)
@@ -95,9 +91,7 @@ class Browser(QWidget):
         dirs_icon = QIcon("assets/list-icon.svg")
         dirs_button = QPushButton(text="", icon=dirs_icon)
         dirs_button.clicked.connect(
-            lambda: self.store.set_state(
-                "show_dirs", not self.store._state.show_dirs
-            )
+            lambda: self.store.set_state("show_dirs", not self.store._state.show_dirs)
         )
         dirs_button.setCheckable(False)
         dirs_button.setStyleSheet(

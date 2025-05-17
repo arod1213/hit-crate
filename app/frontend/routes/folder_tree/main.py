@@ -23,9 +23,7 @@ class FolderTree(QWidget):
         self.store = Store()
 
         self.setMinimumWidth(200)
-        self.setSizePolicy(
-            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred
-        )
+        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
 
         self.tree_view = QTreeView(self)
         self.model = QStandardItemModel()
@@ -114,9 +112,7 @@ class FolderTree(QWidget):
             self.tree_view.collapse(index)
         self.tree_view.clearSelection()
 
-    def _find_containing_root(
-        self, path: Path
-    ) -> Tuple[QModelIndex, Path | None]:
+    def _find_containing_root(self, path: Path) -> Tuple[QModelIndex, Path | None]:
         target_path = path.absolute().resolve()
         root_index = None
 

@@ -34,9 +34,7 @@ class FavoriteButton(QPushButton):
     def set_state(self, state: StoreState):
         value = getattr(state, self.attribute)
         if value != self.isChecked():
-            self.blockSignals(
-                True
-            )  # prevent triggering toggled signal during update
+            self.blockSignals(True)  # prevent triggering toggled signal during update
             self.setChecked(value)
             self.blockSignals(False)
         self.set_icon(value)

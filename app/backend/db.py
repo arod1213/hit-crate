@@ -37,9 +37,7 @@ def migrate_database():
         with engine.begin() as conn:
             if "rolloff" not in columns:
                 print("Adding rolloff column to sample table")
-                conn.execute(
-                    text("ALTER TABLE sample ADD COLUMN rolloff FLOAT")
-                )
+                conn.execute(text("ALTER TABLE sample ADD COLUMN rolloff FLOAT"))
 
 
 def create_db_and_tables():

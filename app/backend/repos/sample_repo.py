@@ -20,10 +20,8 @@ class SampleRepo:
     def __init__(self, session: Session):
         self.session = session
 
-    def query(self, path: Path):
-        return self.session.exec(
-            select(Sample).where(Sample.path == str(path))
-        ).first()
+    def query(self, path: Path) -> Optional[Sample]:
+        return self.session.exec(select(Sample).where(Sample.path == str(path))).first()
 
     def query_by_parent(self, path: Path):
         return self.session.exec(
@@ -71,10 +69,7 @@ class SampleRepo:
             )
 
         samples = self.session.exec(
-            select(Sample)
-            .where(*conditions)
-            .order_by(*order_conditions)
-            .limit(2000)
+            select(Sample).where(*conditions).order_by(*order_conditions).limit(2000)
         ).all()
         return samples
 

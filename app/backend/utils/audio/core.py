@@ -2,15 +2,26 @@ from pathlib import Path
 from typing import Tuple
 
 import librosa
+import soundfile as sf
 import numpy as np
 
 from app.backend.models import AudioFormat
+from app.utils.benchmark import benchmark
 
 
 # audio operations
+@benchmark
 def load_audio(path: str) -> Tuple[np.ndarray, int | float]:
     audio, sr = librosa.load(path, mono=True, res_type="soxr_lq")
-    return (audio, sr)
+    # audio, sr = sf.read(path)
+    # audio = converge_to_mono(audio)
+    return audio, sr
+
+
+def converge_to_mono(audio: np.ndarray) -> np.ndarray:
+    if audio.ndim > 1:
+        return np.mean(audio, axis=1)
+    return audio
 
 
 def normalize_audio(audio: np.ndarray, floor_db: float = -45):
@@ -56,14 +67,10 @@ def get_median(arr: np.ndarray, floor: float) -> float:
     if np.max(arr) > 20:
         arr = filter_below(arr, floor)
         if len(arr) == 0:
-            raise ValueError(
-                "File is likely silent, median could not be calculated"
-            )
+            raise ValueError("File is likely silent, median could not be calculated")
 
     if len(arr) == 0:
-        raise ValueError(
-            "File is likely silent, median could not be calculated"
-        )
+        raise ValueError("File is likely silent, median could not be calculated")
 
     median = np.median(arr)
     if median < 20:

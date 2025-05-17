@@ -38,9 +38,7 @@ class AudioDetail:
         normalized_audio = normalize_audio(audio, floor_db=-35)
         normalized_audio = pad_audio(normalized_audio)
         if len(normalized_audio) == 0:
-            raise ValueError(
-                "Invalid audio: likely silent even after normalization"
-            )
+            raise ValueError("Invalid audio: likely silent even after normalization")
 
         mel_spec = librosa.feature.melspectrogram(y=normalized_audio, sr=sr)
         S = spectral_centroid(mel_spec)
@@ -55,7 +53,5 @@ class AudioDetail:
             R = R_filtered
         R_max_values = np.sort(R)[-3:]
         if len(R_max_values) == 0:
-            raise ValueError(
-                "Rolloff could not be calculated as array is too small"
-            )
+            raise ValueError("Rolloff could not be calculated as array is too small")
         self.rolloff = float(np.median(R_max_values))

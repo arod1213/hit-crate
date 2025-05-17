@@ -73,9 +73,7 @@ class Settings(QWidget):
                 )
                 rescan_button.clicked.connect(lambda _, p=dir.path: rescan(p))
                 # Delete Button
-                delete_button = MenuButton(
-                    text="delete", icon="assets/close-icon.svg"
-                )
+                delete_button = MenuButton(text="delete", icon="assets/close-icon.svg")
                 delete_button.clicked.connect(
                     lambda _, p=dir.path: self.delete_directory(p)
                 )
@@ -92,9 +90,7 @@ class Settings(QWidget):
     def refresh_ui(self):
         # Remove everything except the first widget (the OpenDir button)
         while self.main_layout.count() > 1:
-            item = self.main_layout.takeAt(
-                1
-            )  # Always remove the second item (index 1)
+            item = self.main_layout.takeAt(1)  # Always remove the second item (index 1)
             if item is None:
                 continue
             widget = item.widget()

@@ -41,13 +41,9 @@ class Sample(Base):
     hash: Mapped[str] = mapped_column(String, nullable=False)
 
     duration: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    format: Mapped[AudioFormat] = mapped_column(
-        Enum(AudioFormat), nullable=False
-    )
+    format: Mapped[AudioFormat] = mapped_column(Enum(AudioFormat), nullable=False)
 
-    is_favorite: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    is_favorite: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     sample_rate: Mapped[int] = mapped_column(Integer, nullable=False)
     lufs: Mapped[float] = mapped_column(Float, nullable=False)
@@ -59,9 +55,7 @@ class Sample(Base):
     rolloff: Mapped[float] = mapped_column(Float, nullable=True, default=0.0)
 
     # Foreign key to directory table
-    parent_path: Mapped[str] = mapped_column(
-        String, ForeignKey("directory.path")
-    )
+    parent_path: Mapped[str] = mapped_column(String, ForeignKey("directory.path"))
 
     # Relationship to Directory
     parent_directory: Mapped["Directory"] = relationship(

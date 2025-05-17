@@ -38,12 +38,8 @@ class ResultList(QWidget):
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
         self.results_list.setMinimumHeight(300)
-        self.results_list.setContextMenuPolicy(
-            Qt.ContextMenuPolicy.CustomContextMenu
-        )
-        self.results_list.customContextMenuRequested.connect(
-            self.show_context_menu
-        )
+        self.results_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.results_list.customContextMenuRequested.connect(self.show_context_menu)
         layout.addWidget(self.results_list)
 
         self.setLayout(layout)
@@ -56,14 +52,10 @@ class ResultList(QWidget):
         #     self.handle_select_sample
         # )
 
-        self.backslash_shortcut = QShortcut(
-            QKeySequence(Qt.Key.Key_Backslash), self
-        )
+        self.backslash_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Backslash), self)
         self.backslash_shortcut.activated.connect(self.find_similar)
         self.space_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
-        self.space_shortcut.activated.connect(
-            lambda x=None: self.play_sample(x)
-        )
+        self.space_shortcut.activated.connect(lambda x=None: self.play_sample(x))
 
     def show_context_menu(self, position):
         item = self.results_list.itemAt(position)

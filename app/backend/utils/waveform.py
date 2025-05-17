@@ -16,9 +16,7 @@ def get_waveform_data(path: Path) -> np.ndarray:
         return np.empty((0,))
 
 
-def downsample_waveform(
-    waveform: np.ndarray, max_points: int = 1000
-) -> np.ndarray:
+def downsample_waveform(waveform: np.ndarray, max_points: int = 1000) -> np.ndarray:
     """Downsample waveform to a fixed number of points for plotting."""
     length = len(waveform)
     if length <= max_points:
@@ -40,8 +38,6 @@ def render_waveform(path: Path) -> np.ndarray:
     # Maximizing waveform to -1 to 1
     peak = np.max(np.abs(waveform))
     if peak > 0:
-        waveform = (
-            waveform / peak
-        )  # Normalize by peak, ensuring full span from -1 to 1
+        waveform = waveform / peak  # Normalize by peak, ensuring full span from -1 to 1
 
     return waveform

@@ -41,9 +41,7 @@ def sort_by_freq(x: Sample, samples: Sequence[Sample]) -> Sequence[Sample]:
     match = sample_to_class(x)
 
     with ThreadPoolExecutor(max_workers=5) as executor:
-        results = list(
-            filter(None, executor.map(score_sample, repeat(match), samples))
-        )
+        results = list(filter(None, executor.map(score_sample, repeat(match), samples)))
 
     results.sort(key=lambda item: item[1], reverse=True)
     return [sample for sample, _ in results]
