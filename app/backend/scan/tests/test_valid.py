@@ -9,7 +9,7 @@ def setup_test_dir(tmp_path):
     valid_files = [
         tmp_path / "song1.mp3",
         tmp_path / "song2.WAV",  # uppercase test
-        tmp_path / "album" / "track1.mp3"
+        tmp_path / "album" / "track1.mp3",
     ]
     (tmp_path / "album").mkdir()
     for f in valid_files:
@@ -19,7 +19,7 @@ def setup_test_dir(tmp_path):
     invalid_files = [
         tmp_path / "notes.txt",
         tmp_path / "image.png",
-        tmp_path / "album" / "track2.docx"
+        tmp_path / "album" / "track2.docx",
     ]
     for f in invalid_files:
         f.touch()

@@ -81,9 +81,7 @@ class WaveDisplay(QWidget):
         points_per_pixel = max(1, len(self.waveform) // rect.width())
         x_scale = rect.width() / len(self.waveform)
 
-        for i in range(
-            0, len(self.waveform) - points_per_pixel, points_per_pixel
-        ):
+        for i in range(0, len(self.waveform) - points_per_pixel, points_per_pixel):
             x1 = int(i * x_scale)
             y1 = int(center_y * (1 - self.waveform[i]))
             x2 = int((i + points_per_pixel) * x_scale)

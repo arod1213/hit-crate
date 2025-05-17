@@ -23,13 +23,16 @@ class DirectoryService:
     def query_directories(self):
         return self.repo.query_directories()
 
-    def create(self, path: Path):
+    def create(self, path: Path) -> Directory:
+        match = self.query(path)
+        if match is not None:
+            return match
+
         new_dir = self.repo.create(path)
         if new_dir is not None:
-            new_thread = threading.Thread(
-                target=self.rescan, args=(path,), daemon=True
-            )
+            new_thread = threading.Thread(target=self.rescan, args=(path,), daemon=True)
             new_thread.start()
+        return new_dir
 
     def delete(self, path: str):
         return self.repo.delete(path)
@@ -44,4 +47,4 @@ class DirectoryService:
             if not file.is_file():
                 continue
             matching_sample = existing_samples.get(str(file))
-            self.sample_service.rescan(path, file, matching_sample)
+            self.sample_service.rescan(file, path, matching_sample)

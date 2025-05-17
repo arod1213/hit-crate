@@ -25,7 +25,7 @@ class SampleService:
         self.repo = SampleRepo(db)
         self.directory_repo = DirectoryRepo(db)
 
-    def query(self, path: Path):
+    def query(self, path: Path) -> Optional[Sample]:
         return self.repo.query(path)
 
     def query_samples(self, input: SampleQueryInput) -> Sequence[Sample]:
@@ -44,6 +44,10 @@ class SampleService:
         parent_dir = self.directory_repo.query(parent_path)
         if not parent_dir:
             raise ValueError(f"{parent_path} could not be found")
+
+        match = self.query(path)
+        if match is not None:
+            return match
 
         metadata = AudioMeta(path)
         if metadata.format is None:  # if unsupported
@@ -66,9 +70,7 @@ class SampleService:
             )
         )
 
-    def update(
-        self, path: Path, is_favorite: Optional[bool]
-    ) -> Optional[Sample]:
+    def update(self, path: Path, is_favorite: Optional[bool]) -> Optional[Sample]:
         if not path.is_file():
             return
 
@@ -103,12 +105,15 @@ class SampleService:
     def rescan(self, path: Path, parent_path: Path, matching_sample: Optional[Sample]):
         if not is_one_shot(path):
             if matching_sample:
+                # print("delete")
                 self.delete(path)
             return
         if matching_sample:
             m_time_float = os.path.getmtime(path)
             modified_at = datetime.fromtimestamp(m_time_float)
             if modified_at != matching_sample.modified_at:
+                # print("update")
                 self.update(path, is_favorite=None)
         else:
+            # print("create")
             self.create(path, parent_path)

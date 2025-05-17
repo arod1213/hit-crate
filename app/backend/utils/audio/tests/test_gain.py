@@ -29,4 +29,4 @@ def test_get_lufs_zero_signal():
     silence = np.zeros(int(0.5 * sr))
 
     lufs = get_lufs(silence, sr)
-    assert lufs == float('-inf') or lufs < -100
+    assert lufs == float("-inf") or lufs < -100

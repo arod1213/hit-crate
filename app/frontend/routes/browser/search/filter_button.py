@@ -33,9 +33,7 @@ class FilterButton(QPushButton):
     def set_state(self, state: StoreState):
         value = getattr(state.filters, self.attribute)
         if value != self.isChecked():
-            self.blockSignals(
-                True
-            )  # prevent triggering toggled signal during update
+            self.blockSignals(True)  # prevent triggering toggled signal during update
             self.setChecked(value)
             self.blockSignals(False)
 

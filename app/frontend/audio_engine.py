@@ -77,9 +77,7 @@ class AudioEngine:
             return
         if self.file_path.exists():
             self.is_playing = True
-            playback_thread = threading.Thread(
-                target=self._play_audio, daemon=True
-            )
+            playback_thread = threading.Thread(target=self._play_audio, daemon=True)
             playback_thread.start()
 
     def _play_audio(self):
@@ -91,9 +89,7 @@ class AudioEngine:
             lufs = self.sample.lufs
             if lufs:
                 target_lufs = self._store._state.lufs_target
-                target_gain = amp_to_target_lufs(
-                    curr_lufs=lufs, target=target_lufs
-                )
+                target_gain = amp_to_target_lufs(curr_lufs=lufs, target=target_lufs)
                 if target_gain > 1:
                     buffer = amplify_audio(self.sample.path, target_gain)
                     self.sound = pygame.mixer.Sound(buffer)

@@ -1,10 +1,17 @@
 from pathlib import Path
 
 import numpy as np
+from app.backend.db import engine
+import soundfile as sf
+from sqlmodel import Session
+from app.backend.services.directory_service import DirectoryService
 from app.backend.utils.audio.checks import is_one_shot
+from app.backend.utils.audio.get_details import AudioDetail
+from app.backend.utils.audio.get_meta import AudioMeta
+from app.utils.benchmark import benchmark
 
 FILE_A = Path.home() / "Desktop" / "Scan Test" / "loop.wav"
-FILE_B = Path.home() / "Desktop" / "Scan Test" / "loop2.wav"
+FILE_B = Path.home() / "Desktop" / "Scan Test" / "bright.wav"
 
 
 def filter_nan(arr):
@@ -87,25 +94,27 @@ def smart_filter(arr: np.ndarray):
     return arr[arr > 25]
 
 
+# SAMPLE_FOLDER = Path.home() / "Documents" / "Sample Libraries" / "M-Phazes Drums and Samples" / "_!Beat Butcha Kits"
+
+
+# @benchmark
+# def scan():
+#     with Session(engine) as session:
+#         DirectoryService(session).create(SAMPLE_FOLDER)
+#     with Session(engine) as session:
+#         DirectoryService(session).rescan(SAMPLE_FOLDER)
+#
+# def delete():
+#     pass
+#     with Session(engine) as session:
+#         DirectoryService(session).delete(str(SAMPLE_FOLDER))
+# # scan()
+# delete()
+
+
+
 files = [FILE_A, FILE_B]
 for f in files:
-    rms = is_one_shot(f)
-    # y, sr = librosa.load(f, mono=True, res_type="soxr_lq")
-    # y = normalize_audio(y)
-    # S = librosa.feature.melspectrogram(y=y, sr=sr)
-    # centroid = spectral_centroid(S)
-    # roll = rolloff(y, sr)
-    #
-    # centroid = smart_filter(centroid)
-    # roll = smart_filter(roll)
-    # # print(f"roll is {roll}")
-    # # print(f"roll max is {np.max(roll)}")
-    # roll = np.sort(roll)[-3:]
-    #
-    # value = centroid
-    # print(f"{f.name} PROPERTIES")
-    # print(f"centroid is {centroid}")
-    # print(f"rolloff is {roll}")
-    # print(f"Mean: {np.mean(roll):.2f} - {np.mean(centroid):.2f}")
-    # print(f"Median: {np.median(roll):.2f} - {np.median(centroid):.2f}")
-    # print(f"Stdev: {np.std(roll):.2f} - {np.std(centroid):.2f}")
+    rms = is_one_shot(Path(f))
+    detail = AudioDetail(f)
+    meta = AudioMeta(f)

@@ -26,4 +26,4 @@ class Signals(QObject):
 signals = Signals()
 
 
-__all__ = ['signals']
+__all__ = ["signals"]
