@@ -11,16 +11,19 @@ ZIP_NAME="dist/Hit Crate.zip"
 
 
 cd ~/documents/github/hit-crate
-sudo rm -rf dist
-sudo rm -rf build
-
-python3 setup.py py2app
+# sudo rm -rf dist
+# sudo rm -rf build
+#
+# python3 setup.py py2app
 
 
 echo "Unzipping necessary files"
 cd "dist/Hit Crate.app/Contents/Resources/lib"
 unzip python313.zip -d python3.13
 rm python313.zip
+
+echo "removing bad symlink - site.pyo"
+rm -f python3.13/site.pyo
 
 cd "python3.13/pygame/docs/generated/_static"
 unzip legacy_logos.zip -d legacy_logos
@@ -33,6 +36,8 @@ cd ..
 cd "python3.13/pkg_resources/tests/data/my-test-package-zip"
 unzip my-test-package.zip -d my-test-package
 rm my-test-package.zip
+
+
 
 echo "Unzipping finished"
 
