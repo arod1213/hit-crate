@@ -95,22 +95,24 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     background: none;
     height: 0px;
 }
+
+
 QSlider::handle:horizontal {
     width: 20px;
     height: 20px;
 }
 
 QTreeView {
-background-color: transparent;
-border: 1px solid #B6B5B5;
-padding: 10px;
-font-size: 14px;
-color: #000000;
-border-radius: 10px;
+  background-color: transparent;
+  border: 1px solid #B6B5B5;
+  padding: 10px;
+  font-size: 14px;
+  color: #000000;
+  border-radius: 10px;
 }
 
 QTreeView::item {
-padding: 5px;
+  padding: 5px;
 }
 
 QTreeView::item:hover {
@@ -118,6 +120,6 @@ QTreeView::item:hover {
 }
 
 QTreeView::item:selected {
-background-color: #5BA7FF;  /* Tailwind-ish blue */
-color: white;
+  background-color: #5BA7FF;  /* Tailwind-ish blue */
+  color: white;
 }

@@ -1,6 +1,5 @@
 from PyQt6.QtCore import QObject, pyqtSignal
 
-
 # class Signal:
 #     def __init__(self):
 #         self.callbacks: List[Callable] = []

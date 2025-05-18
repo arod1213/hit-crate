@@ -32,17 +32,25 @@ class BrowserApp(QMainWindow):
         self.stack.addWidget(self.settings_widget)
 
         self.setup_ui()
-        self.setStyleSheet(self.load_stylesheet())
+        is_dark_mode = False
+        self.set_stylesheet(is_dark_mode)
         self.store.subscribe("show_dirs", self.toggle_tree)
 
-    def load_stylesheet(self) -> str:
+    def load_stylesheet(self, is_dark_mode: bool) -> str:
+        style_path = "style_light.qss"
+        if is_dark_mode:
+            style_path = "style_dark.qss"
         # Resolve style.qss relative to this file
-        style_path = Path(__file__).parent / "style.qss"
+        style_path = Path(__file__).parent / style_path
         if style_path.exists():
             return style_path.read_text()
         else:
             print("Warning: style.qss not found")
             return ""
+
+    def set_stylesheet(self, is_dark_mode: bool) -> None:
+        style_sheet = self.load_stylesheet(is_dark_mode)
+        self.setStyleSheet(style_sheet)
 
     def setup_ui(self):
         self.setWindowTitle("Hit Crate")

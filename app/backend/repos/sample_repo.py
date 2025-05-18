@@ -12,6 +12,7 @@ from ..schemas import (
     SampleQueryInput,
     SampleSimilarInput,
     SampleUpdateInput,
+    SampleUpdateMetaInput,
 )
 from ..utils.vector_compare import sort_by_freq
 
@@ -133,7 +134,7 @@ class SampleRepo:
         self.session.refresh(sample)
         return sample
 
-    def update(self, path: Path, input: SampleUpdateInput) -> Optional[Sample]:
+    def update(self, path: Path, input: SampleUpdateInput | SampleUpdateMetaInput) -> Optional[Sample]:
         sample = self.session.exec(
             select(Sample).where(Sample.path == str(path))
         ).first()

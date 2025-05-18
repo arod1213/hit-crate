@@ -3,8 +3,8 @@ from pathlib import Path
 
 from app.backend.db import engine
 from app.backend.services import DirectoryService
-from app.frontend.signals import signals
 from app.frontend.components import ToggleView
+from app.frontend.signals import signals
 from app.frontend.store import Store
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QIcon

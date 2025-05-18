@@ -5,6 +5,7 @@ import numpy as np
 import soundfile as sf
 
 from app.backend.utils.audio.gain import get_lufs
+from app.utils.benchmark import benchmark
 
 from .core import (
     filter_frequency_data,
@@ -18,8 +19,11 @@ from .width import get_stereo_width
 
 
 class AudioDetail:
+    @benchmark
     def __init__(self, path: Path):
         self.name: str = path.stem
+        info = sf.info(str(path))
+
         audio, sr = load_audio(str(path))
 
         audio = pad_audio(audio)
@@ -27,7 +31,6 @@ class AudioDetail:
         self.lufs: float = get_lufs(audio, sr)
         self.mfcc = mfcc(audio, sr)
 
-        info = sf.info(str(path))
         if info.channels > 2:
             raise ValueError("Invalid audio format")
         elif info.channels == 1:

@@ -16,6 +16,7 @@ from ..schemas import (
     SampleQueryInput,
     SampleSimilarInput,
     SampleUpdateInput,
+    SampleUpdateMetaInput,
 )
 from ..utils.audio import AudioDetail, AudioMeta
 
@@ -70,9 +71,20 @@ class SampleService:
             )
         )
 
-    def update(self, path: Path, is_favorite: Optional[bool]) -> Optional[Sample]:
-        if not path.is_file():
-            return
+    def update(self, path: Path, input: SampleUpdateInput) -> Optional[Sample]:
+        match = self.query(path)
+        if not match:
+            return None
+
+        input = SampleUpdateInput(
+            is_favorite=input.is_favorite,
+        )
+        return self.repo.update(path, input)
+
+    def update_meta(self, path: Path) -> Optional[Sample]:
+        match = self.query(path)
+        if not match:
+            return None
 
         metadata = AudioMeta(path)
         if metadata.format is None:  # if unsupported
@@ -81,8 +93,7 @@ class SampleService:
 
         detail = AudioDetail(path)
 
-        input = SampleUpdateInput(
-            is_favorite=is_favorite,
+        input = SampleUpdateMetaInput(
             duration=metadata.duration,
             format=metadata.format,
             hash=metadata.hash,
@@ -112,8 +123,7 @@ class SampleService:
             m_time_float = os.path.getmtime(path)
             modified_at = datetime.fromtimestamp(m_time_float)
             if modified_at != matching_sample.modified_at:
-                # print("update")
-                self.update(path, is_favorite=None)
+                self.update_meta(path)
         else:
             # print("create")
             self.create(path, parent_path)
