@@ -41,8 +41,7 @@ class SampleCreateInput(SQLModel):
     rolloff: float
 
 
-class SampleUpdateInput(SQLModel):
-    is_favorite: Optional[bool] = None
+class SampleUpdateMetaInput(SQLModel):
     format: Optional[AudioFormat] = None
     duration: Optional[float] = None
     hash: Optional[str] = None
@@ -52,3 +51,6 @@ class SampleUpdateInput(SQLModel):
     stereo_width: Optional[float] = None
     spectral_centroid: Optional[float] = None
     rolloff: Optional[float] = None
+
+class SampleUpdateInput(SQLModel):
+    is_favorite: Optional[bool] = None

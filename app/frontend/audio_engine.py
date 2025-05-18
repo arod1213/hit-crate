@@ -10,6 +10,8 @@ import pygame
 from scipy.io import wavfile
 
 from app.backend.models import Sample
+
+# from app.frontend.settings import load_normalize_setting
 from app.frontend.store import Store
 
 from .utils.gain import amp_to_target_lufs
@@ -45,7 +47,6 @@ class AudioEngine:
 
         self.file_path: Path | None = None
         self.is_playing = False  # Add a boolean to track the playing status
-        self.even_gain = True
         self.sample: Optional[Sample] = None
         self.sound: Optional[pygame.mixer.Sound] = None
         self.channel: Optional[pygame.mixer.Channel] = None
@@ -85,19 +86,19 @@ class AudioEngine:
         if self.sample is None or self.sound is None:
             return
 
-        if self.even_gain and self.sample:
-            lufs = self.sample.lufs
-            if lufs:
-                target_lufs = self._store._state.lufs_target
-                target_gain = amp_to_target_lufs(curr_lufs=lufs, target=target_lufs)
-                if target_gain > 1:
-                    buffer = amplify_audio(self.sample.path, target_gain)
-                    self.sound = pygame.mixer.Sound(buffer)
-                    target_gain = 1  # reset after amplification
-                self.sound.set_volume(target_gain)
+        is_normalize = True  # load_normalize_setting()
 
+        target_gain = 1
+        if is_normalize:
+            curr_lufs = self.sample.lufs
+            target_lufs = self._store._state.lufs_target
+            target_gain = amp_to_target_lufs(curr_lufs=curr_lufs, target=target_lufs)
+            if target_gain > 1:
+                buffer = amplify_audio(self.sample.path, target_gain)
+                self.sound = pygame.mixer.Sound(buffer)
+
+        self.sound.set_volume(target_gain)
         self.channel = self.sound.play(loops=0)
-
         # Wait until the music is done playing
         while self.channel.get_busy():
             time.sleep(0.1)

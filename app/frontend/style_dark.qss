@@ -1,0 +1,127 @@
+/* Main Window */
+QMainWindow {
+    background-color: #E0E0E0;
+}
+
+QLabel {
+  background-color: transparent;
+}
+
+QLabel {
+  background-color: transparent;
+}
+
+/* Base Widget */
+QWidget {
+    background-color: #333333;
+    color: #FFFFFF;             /* Light neutral text */
+    font-family: "Monaco", "Tahoma", sans-serif;
+    font-size: 13px;
+}
+
+/* Buttons */
+QPushButton {
+    background-color: #EEEEEE;
+    color: #000000;
+    border: 1px solid #B6B5B5;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #E5E6E6;
+}
+
+QPushButton:pressed {
+    background-color: #5BA7FF;
+}
+
+QPushButton:checked {
+    background-color: #5BA7FF;  /* Tailwind-ish blue */
+    color: white;
+    border: 0px solid #FFFFFF;
+}
+
+/* Text Inputs */
+QLineEdit, QTextEdit {
+    background-color: #333333;
+    border: 1px solid #555555;
+    padding: 6px;
+    border-radius: 15px;
+    font-size: 14px;
+}
+
+QLineEdit:focus, QTextEdit:focus {
+    border: 1px solid #5BA7FF;
+}
+
+/* List Items */
+QListView {
+    background-color: #333333;
+    border: 1px solid #E5E5E5;
+    padding: 3px;
+    border-radius: 15px;
+}
+
+QListView::item {
+    padding: 8px;
+    border-radius: 12px;
+}
+
+QListView::item:selected {
+    background-color: #5BA7FF;
+    border-radius: 12px;
+    margin: 2px;
+    background-clip: padding;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    background: #444444;
+    width: 8px;
+}
+
+QScrollBar::handle:vertical {
+    background: #555555;
+    border-radius: 4px;
+    min-height: 15px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #7D7D7D;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    background: none;
+    height: 0px;
+}
+
+
+QSlider::handle:horizontal {
+    width: 20px;
+    height: 20px;
+}
+
+QTreeView {
+background-color: transparent;
+border: 1px solid #B6B5B5;
+padding: 10px;
+font-size: 14px;
+color: #000000;
+border-radius: 10px;
+}
+
+QTreeView::item {
+color: #FFFFFF;
+padding: 5px;
+}
+
+QTreeView::item:hover {
+  background-color: #444444;
+}
+
+QTreeView::item:selected {
+background-color: #5BA7FF;  /* Tailwind-ish blue */
+color: white;
+}

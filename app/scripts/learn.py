@@ -1,17 +1,11 @@
 from pathlib import Path
 
 import numpy as np
-from app.backend.db import engine
-import soundfile as sf
-from sqlmodel import Session
-from app.backend.services.directory_service import DirectoryService
-from app.backend.utils.audio.checks import is_one_shot
 from app.backend.utils.audio.get_details import AudioDetail
-from app.backend.utils.audio.get_meta import AudioMeta
-from app.utils.benchmark import benchmark
 
-FILE_A = Path.home() / "Desktop" / "Scan Test" / "loop.wav"
-FILE_B = Path.home() / "Desktop" / "Scan Test" / "bright.wav"
+FILE_A = Path.home() / "Desktop" / "Scan Test" / "1sec.wav"
+FILE_B = Path.home() / "Desktop" / "Scan Test" / "2sec.wav"
+FILE_C = Path.home() / "Desktop" / "Scan Test" / "3sec.wav"
 
 
 def filter_nan(arr):
@@ -94,27 +88,29 @@ def smart_filter(arr: np.ndarray):
     return arr[arr > 25]
 
 
-# SAMPLE_FOLDER = Path.home() / "Documents" / "Sample Libraries" / "M-Phazes Drums and Samples" / "_!Beat Butcha Kits"
+SAMPLE_FOLDER = Path.home() / "Documents" / "Sample Libraries" / "M-Phazes Drums and Samples" / "_!Beat Butcha Kits"
 
 
 # @benchmark
 # def scan():
-#     with Session(engine) as session:
-#         DirectoryService(session).create(SAMPLE_FOLDER)
-#     with Session(engine) as session:
-#         DirectoryService(session).rescan(SAMPLE_FOLDER)
+    # with Session(engine) as session:
+    #     DirectoryService(session).create(SAMPLE_FOLDER)
+    # with Session(engine) as session:
+    #     DirectoryService(session).rescan(SAMPLE_FOLDER)
 #
 # def delete():
 #     pass
 #     with Session(engine) as session:
 #         DirectoryService(session).delete(str(SAMPLE_FOLDER))
-# # scan()
+# scan()
 # delete()
 
 
 
-files = [FILE_A, FILE_B]
+files = [FILE_A, FILE_B, FILE_C]
 for f in files:
-    rms = is_one_shot(Path(f))
-    detail = AudioDetail(f)
-    meta = AudioMeta(f)
+    AudioDetail(f)
+    # audio, sr = load_audio(str(f))
+    # print(len(audio), sr)
+    # detail = AudioDetail(f)
+    # meta = AudioMeta(f)
