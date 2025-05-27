@@ -57,6 +57,7 @@ class SampleRepo:
         if input.spectral_centroid is None and input.width is None:
             order_conditions.append(Sample.name.asc())
 
+        # check if name is like
         def add_name_condition(text: str):
             return func.lower(Sample.name).like(f"%{text.lower()}%")
 
