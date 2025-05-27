@@ -11,6 +11,7 @@ def tokenize(text: str) -> List[str]:
         match_clap: ['clap', 'clp'],
         match_hat_closed: ['chh', 'hhc', 'hat cl', 'closed h'],
         match_hat_open: ['ohh', 'hho', 'hat op', 'open h'],
+        match_hat: ['hh', 'hat'],
         match_tom: ['floor', 'mid', 'tom', 'tm'],
         match_shaker: ['shk', 'shaker'],
         match_tamb: ['tamb', 'tmb'],
@@ -44,11 +45,17 @@ def match_clap() -> List[str]:
 
 
 def match_hat_closed() -> List[str]:
-    return ['chh', 'hat cl', 'hhc']
+    return ['chh', 'hat cl', 'hhc', 'hat']
 
 
 def match_hat_open() -> List[str]:
-    return ['ohh', 'hat op', 'hho']
+    return ['ohh', 'hat open', 'hho']
+
+
+def match_hat() -> List[str]:
+    hat_c = match_hat_closed()
+    hat_o = match_hat_open()
+    return [*hat_c, *hat_o]
 
 
 def match_tom() -> List[str]:
