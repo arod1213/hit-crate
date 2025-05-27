@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 from app.backend.utils.audio.get_details import AudioDetail
 
-FILE_A = Path.home() / "Desktop" / "Scan Test" / "1sec.wav"
+FILE_A = Path.home() / "Desktop" / "Scan Test" / "dark.wav"
 FILE_B = Path.home() / "Desktop" / "Scan Test" / "2sec.wav"
 FILE_C = Path.home() / "Desktop" / "Scan Test" / "3sec.wav"
 
@@ -109,7 +109,10 @@ SAMPLE_FOLDER = Path.home() / "Documents" / "Sample Libraries" / "M-Phazes Drums
 
 files = [FILE_A, FILE_B, FILE_C]
 for f in files:
-    AudioDetail(f)
+    info = AudioDetail(f)
+    print(f.name)
+    print("centroid - ", info.spectral_centroid)
+    print("rolloff", info.rolloff)
     # audio, sr = load_audio(str(f))
     # print(len(audio), sr)
     # detail = AudioDetail(f)

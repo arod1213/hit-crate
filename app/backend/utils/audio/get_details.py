@@ -5,7 +5,6 @@ import numpy as np
 import soundfile as sf
 
 from app.backend.utils.audio.gain import get_lufs
-from app.utils.benchmark import benchmark
 
 from .core import (
     filter_frequency_data,
@@ -19,7 +18,6 @@ from .width import get_stereo_width
 
 
 class AudioDetail:
-    @benchmark
     def __init__(self, path: Path):
         self.name: str = path.stem
         info = sf.info(str(path))

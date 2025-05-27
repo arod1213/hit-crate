@@ -6,6 +6,8 @@ from typing import Optional, Sequence
 from sqlalchemy import func, nullslast, or_
 from sqlmodel import Session, select
 
+from app.backend.utils.tokenizer import tokenize
+
 from ..models import Sample
 from ..schemas import (
     SampleCreateInput,
@@ -55,10 +57,19 @@ class SampleRepo:
         if input.spectral_centroid is None and input.width is None:
             order_conditions.append(Sample.name.asc())
 
+        def add_name_condition(text: str):
+            return func.lower(Sample.name).like(f"%{text.lower()}%")
+
         # general metadata
         if input.name and input.name.strip():
+            token_conditions = []
             for word in input.name.lower().split():
-                conditions.append(func.lower(Sample.name).like(f"%{word}%"))
+                token_conditions.append(add_name_condition(word))
+            matches = tokenize(input.name)
+            for word in matches:
+                token_conditions.append(add_name_condition(word))
+            conditions.append(or_(*token_conditions))
+
         if input.is_favorite is True:
             conditions.append(Sample.is_favorite == True)
         if input.path is not None:
