@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 from PyQt6.QtCore import QMimeData, Qt, QUrl
 from PyQt6.QtGui import QColor, QDrag, QMouseEvent, QPainter, QPen
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
@@ -28,13 +27,9 @@ class WaveDisplay(QWidget):
             return
         waveform = wv.render_waveform(Path(sample.path))
         # Apply smoothing
-        if waveform is not None and waveform.size != 0:
-            window_size = 5
-            self.waveform = np.convolve(
-                waveform, np.ones(window_size) / window_size, mode="same"
-            )
-            self.waveform = np.clip(self.waveform, -1, 1)
-            self.update()  # Trigger repaint
+        if waveform is not None:
+            self.waveform = waveform
+            self.update()
 
     def mousePressEvent(self, a0: QMouseEvent | None):
         sample = self.store._state.selected_sample

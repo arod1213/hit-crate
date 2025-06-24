@@ -64,9 +64,12 @@ class SampleRepo:
         # general metadata
         if input.name and input.name.strip():
             token_conditions = []
-            for word in input.name.lower().split():
-                token_conditions.append(add_name_condition(word))
             matches = tokenize(input.name)
+            for word in input.name.lower().split():
+                if word not in matches:
+                    conditions.append(add_name_condition(word))
+
+                token_conditions.append(add_name_condition(word))
             for word in matches:
                 token_conditions.append(add_name_condition(word))
             conditions.append(or_(*token_conditions))
