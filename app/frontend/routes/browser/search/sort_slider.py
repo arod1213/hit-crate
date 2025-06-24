@@ -5,6 +5,7 @@ from app.frontend.store import Store, StoreState
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QWidget
+from app.frontend.settings import load_dual_slider_setting
 
 
 @dataclass
@@ -113,13 +114,17 @@ class SortSlider(QWidget):
             return
 
         # reset previous value
-        self.store.set_state(self.subscribe_to, None)
+        if not load_dual_slider_setting():
+            print("RESETTING", self.subscribe_to)
+            self.store.set_state(self.subscribe_to, None)
 
         self.subscribe_to = new_key
         self.slider.subscribe_to = new_key
         self.sub = new_sub
         self.default_value = new_sub.default_value
-        self.store.set_state(new_key, new_sub.default_value)
+        if getattr(self.store._state, new_key) is None:
+            self.store.set_state(new_key, new_sub.default_value)
+
         self.slider.reset(
             subscribe_to=new_key,
             min_value=new_sub.min,
@@ -128,6 +133,7 @@ class SortSlider(QWidget):
             text_right=new_sub.text_right,
         )
         self.power_button.setChecked(True)
+        print("VALUES ARE", self.store._state.stereo_width, self.store._state.spectral_centroid)
         pass
 
     # update to store state

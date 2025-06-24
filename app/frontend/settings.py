@@ -26,6 +26,17 @@ def load_auto_play_setting():
     return settings.value("auto_play", True, type=bool)
 
 
+def save_dual_slider_setting(enabled: bool):
+    settings = QSettings()
+    settings.setValue("dual_slider", enabled)
+    return
+
+
+def load_dual_slider_setting():
+    settings = QSettings()
+    return settings.value("dual_slider", False, type=bool)
+
+
 # def save_normalize_settings(is_normalize: bool):
 #     settings = QSettings()
 #     settings.setValue("normalize_playback", is_normalize)

@@ -1,6 +1,8 @@
 from app.frontend.settings import (
     load_auto_play_setting,
+    load_dual_slider_setting,
     save_auto_play_setting,
+    save_dual_slider_setting,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -26,9 +28,22 @@ class AudioSettings(QWidget):
         )
         self.main_layout.addWidget(self.auto_play)
 
+        is_dual_slider = load_dual_slider_setting()
+        self.dual_slider = QPushButton(text="Dual Search")
+        self.dual_slider.setCheckable(True)
+        self.dual_slider.setChecked(is_dual_slider)
+        self.dual_slider.clicked.connect(
+            lambda x=not is_dual_slider: self.update_dual_slider(x)
+        )
+        self.main_layout.addWidget(self.dual_slider)
+
     def update_auto_play(self, value: bool):
         self.auto_play.setChecked(value)
         save_auto_play_setting(value)
+
+    def update_dual_slider(self, value: bool):
+        self.dual_slider.setChecked(value)
+        save_dual_slider_setting(value)
 
     def update_value(self, attr: str, value):
         if hasattr(self, attr):
