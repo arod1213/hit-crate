@@ -41,11 +41,15 @@ class SampleRepo:
         order_conditions = []
 
         # audio properties
-        if input.width is not None:
+        if input.width is not None and input.spectral_centroid is None:
             order_conditions.append(
                 func.abs(Sample.stereo_width - input.width).asc()  # type: ignore[arg-type]
             )
+
         if input.spectral_centroid is not None:
+            if input.width is not None:
+                conditions.append(func.abs(Sample.stereo_width - input.width) < 10)
+
             order_conditions.append(
                 nullslast(
                     func.abs(
