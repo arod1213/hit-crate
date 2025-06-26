@@ -11,6 +11,10 @@ QLabel {
   background-color: transparent;
 }
 
+QToolTip{
+  background-color: "#333333";
+}
+
 /* Base Widget */
 QWidget {
     background-color: #E0E0E0;

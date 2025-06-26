@@ -73,7 +73,6 @@ class SampleRepo:
                 if word not in matches:
                     conditions.append(add_name_condition(word))
 
-                token_conditions.append(add_name_condition(word))
             for word in matches:
                 token_conditions.append(add_name_condition(word))
             conditions.append(or_(*token_conditions))

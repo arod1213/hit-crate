@@ -22,6 +22,7 @@ class Filters(QWidget):
         byWidth = self.store._state.filters.by_width
         byFreq = self.store._state.filters.by_freq
         self.width_button = FilterButton(
+            tooltip="Enable this to prioritize stereo width\nwhen searching for similar sounds.",
             text="Width",
             pressed=byWidth,
             attribute="by_width",
@@ -30,6 +31,7 @@ class Filters(QWidget):
         layout.addWidget(self.width_button)
 
         self.freq_button = FilterButton(
+            tooltip="Enable this to prioritize frequency distribution\nwhen searching for similar sounds.",
             text="Frequency",
             pressed=byFreq,
             attribute="by_freq",

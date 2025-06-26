@@ -76,6 +76,7 @@ class Browser(QWidget):
         )
         self.store.subscribe("curr_path", self.update_path)
         self.path.clicked.connect(self.reset_path)
+        self.path.setToolTip("Shows which folders you are currently searching in.\nTip: Right click to reset and search all")
         main_layout.addWidget(self.path, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         bottom_widget = QWidget()
@@ -88,6 +89,7 @@ class Browser(QWidget):
             text_left="quiet",
             text_right="loud",
         )
+        output_slider.setToolTip("Adjusts output volume in LUFS")
         dirs_icon = QIcon("assets/list-icon.svg")
         dirs_button = QPushButton(text="", icon=dirs_icon)
         dirs_button.clicked.connect(
@@ -103,6 +105,7 @@ class Browser(QWidget):
             }
         """
         )
+        dirs_button.setToolTip("Shows all directories you scanned\nTip: You can select a directory to only search in that folder")
         bottom_layout.addWidget(dirs_button)
         bottom_layout.addWidget(output_slider)
         main_layout.addWidget(bottom_widget)

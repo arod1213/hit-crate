@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import QPushButton
 class FilterButton(QPushButton):
     def __init__(
         self,
+        tooltip: str,
         attribute: str,
         text: str = "",
         icon: Optional[str] = None,
@@ -15,6 +16,7 @@ class FilterButton(QPushButton):
     ):
         super().__init__()
         self.attribute = attribute
+        self.setToolTip(tooltip)
         self.setCheckable(True)
         self.setChecked(pressed)
         if icon is not None:
