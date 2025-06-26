@@ -26,6 +26,7 @@ class AudioSettings(QWidget):
         self.auto_play.clicked.connect(
             lambda x=not is_auto_play: self.update_auto_play(x)
         )
+        self.auto_play.setToolTip("Sample will play on first click if enabled")
         self.main_layout.addWidget(self.auto_play)
 
         is_dual_slider = load_dual_slider_setting()
@@ -35,6 +36,7 @@ class AudioSettings(QWidget):
         self.dual_slider.clicked.connect(
             lambda x=not is_dual_slider: self.update_dual_slider(x)
         )
+        self.dual_slider.setToolTip("Both Width and Frequency sliders will be active to filter your results more")
         self.main_layout.addWidget(self.dual_slider)
 
     def update_auto_play(self, value: bool):

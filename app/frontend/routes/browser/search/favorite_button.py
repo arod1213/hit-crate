@@ -9,6 +9,7 @@ class FavoriteButton(QPushButton):
         super().__init__()
         self.attribute = "by_favorites"
         self.setCheckable(True)
+        self.setToolTip("Filter results to only show\nyour favorite samples")
 
         self.store = Store()
         byFavs = self.store._state.by_favorites

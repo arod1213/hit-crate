@@ -71,12 +71,14 @@ class Settings(QWidget):
                     icon="assets/refresh-icon.svg",
                     size=QSize(19, 19),
                 )
+                rescan_button.setToolTip("Rescans all files in the directory\nNote: Please allow up to a few minutes for large folders")
                 rescan_button.clicked.connect(lambda _, p=dir.path: rescan(p))
                 # Delete Button
                 delete_button = MenuButton(text="delete", icon="assets/close-icon.svg")
                 delete_button.clicked.connect(
                     lambda _, p=dir.path: self.delete_directory(p)
                 )
+                delete_button.setToolTip("Deletes all files from the directory.\nWARNING: This can not be undone and will remove all favorites in the folder")
 
                 # Add to layout
                 item_layout.addWidget(icon_label)

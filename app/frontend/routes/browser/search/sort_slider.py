@@ -71,6 +71,7 @@ class SortSlider(QWidget):
         self.power_button.setIconSize(QSize(16, 16))
         self.power_button.setFixedSize(22, 22)
         self.power_button.clicked.connect(self.toggle_power)
+        self.power_button.setToolTip("Toggles the slider and switches to A-Z sorting instead")
         self.store.subscribe(self.subscribe_to, self.update_power)
 
         layout.addWidget(self.power_button)
@@ -99,6 +100,7 @@ class SortSlider(QWidget):
         """
         )
         self.toggle_button.clicked.connect(self.rotate_sub)
+        self.toggle_button.setToolTip("Switches between sorting by dark/bright and mono/wide.\nNote: When dual search is enabled both can be active together")
         layout.addWidget(self.toggle_button)
 
     # switch subscriptable item
@@ -115,7 +117,6 @@ class SortSlider(QWidget):
 
         # reset previous value
         if not load_dual_slider_setting():
-            print("RESETTING", self.subscribe_to)
             self.store.set_state(self.subscribe_to, None)
 
         self.subscribe_to = new_key
@@ -133,7 +134,6 @@ class SortSlider(QWidget):
             text_right=new_sub.text_right,
         )
         self.power_button.setChecked(True)
-        print("VALUES ARE", self.store._state.stereo_width, self.store._state.spectral_centroid)
         pass
 
     # update to store state
