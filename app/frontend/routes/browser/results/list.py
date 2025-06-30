@@ -96,6 +96,7 @@ class ResultList(QWidget):
             sample = self.store._state.selected_sample
 
         can_play = self.audio_player.load_audio(sample)
+        print("play is", can_play)
         if can_play:
             self.audio_player.play()
         else:
