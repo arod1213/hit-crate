@@ -1,38 +1,18 @@
-from os import wait
 from pathlib import Path
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QMainWindow, QMenuBar, QSplitter, QStackedWidget
-from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QMainWindow, QSplitter, QStackedWidget
 
 from app.frontend.routes.browser.main import Browser
 from app.frontend.routes.folder_tree.main import FolderTree
 from app.frontend.routes.settings.main import Settings
 from app.frontend.store import Store, StoreState
-from app.frontend.settings import load_spam_setting, save_spam_setting
 
 
 class BrowserApp(QMainWindow):
     def __init__(self):
         super().__init__()
-
-        # Create native macOS-style menu bar
-        menubar = self.menuBar()
-        menubar = menubar if menubar is not None else QMenuBar(self)
-        view_menu = menubar.addMenu("Options")
-        if view_menu is not None:
-            retrigger = QAction("Spam play", self)
-            retrigger.triggered.connect(lambda: save_spam_setting(not load_spam_setting()))
-            view_menu.addAction(retrigger)
-
-            # retrigger = QAction("Auto Play", self)
-            # retrigger.triggered.connect(lambda: save_auto_play_setting(not load_auto_play_setting()))
-            # view_menu.addAction(retrigger)
-
-            retrigger = QAction("Pin on top", self)
-            retrigger.triggered.connect(lambda: self.set_pin(True))
-            view_menu.addAction(retrigger)
 
         self.store = Store()
         self.store.subscribe("curr_page", self.toggle_view)

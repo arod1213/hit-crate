@@ -57,6 +57,11 @@ class ResultList(QWidget):
         self.space_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
         self.space_shortcut.activated.connect(lambda x=None: self.play_sample(x))
 
+        self.right_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Right), self)
+        self.right_shortcut.activated.connect(lambda x=None: self.play_sample(x, True))
+        self.left_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left), self)
+        self.left_shortcut.activated.connect(lambda x=None: self.audio_player.stop())
+
     def show_context_menu(self, position):
         item = self.results_list.itemAt(position)
         if item is None:
@@ -91,13 +96,13 @@ class ResultList(QWidget):
         if auto_play:
             self.play_sample(file_data)
 
-    def play_sample(self, sample: Optional[Sample]):
+    def play_sample(self, sample: Optional[Sample], can_spam: bool = False):
         if sample is None:
             sample = self.store._state.selected_sample
 
         can_play = self.audio_player.load_audio(sample)
         print("play is", can_play)
-        if can_play:
+        if can_play or can_spam:
             self.audio_player.play()
         else:
             self.audio_player.stop()
