@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 
 from app.frontend.components.slider import Slider
+from app.frontend.settings import load_dual_slider_setting
 from app.frontend.store import Store, StoreState
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QWidget
-from app.frontend.settings import load_dual_slider_setting
 
 
 @dataclass

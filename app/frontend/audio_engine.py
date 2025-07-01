@@ -10,8 +10,6 @@ import pygame
 from scipy.io import wavfile
 
 from app.backend.models import Sample
-
-from app.frontend.settings import load_spam_setting
 from app.frontend.store import Store
 
 from .utils.gain import amp_to_target_lufs
@@ -57,10 +55,9 @@ class AudioEngine:
         """
         # stop playing audio
         is_playing = self.is_playing
-        can_spam = load_spam_setting()
         self.stop()
         if str(self.file_path) == sample.path:
-            if is_playing and not can_spam:
+            if is_playing:
                 return False
             return True
 

@@ -36,15 +36,6 @@ def load_dual_slider_setting():
     settings = QSettings()
     return settings.value("dual_slider", False, type=bool)
 
-def load_spam_setting():
-    settings = QSettings()
-    return settings.value("spam_play", True, type=bool)
-    
-
-def save_spam_setting(enabled: bool):
-    settings = QSettings()
-    settings.setValue("spam_play", enabled)
-
 
 # def save_normalize_settings(is_normalize: bool):
 #     settings = QSettings()

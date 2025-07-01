@@ -1,4 +1,4 @@
-from typing import List, Callable
+from typing import Callable, List
 
 
 def tokenize(text: str) -> List[str]:
