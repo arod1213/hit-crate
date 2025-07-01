@@ -134,6 +134,7 @@ class SortSlider(QWidget):
             text_right=new_sub.text_right,
         )
         self.power_button.setChecked(True)
+        self.store.subscribe(self.subscribe_to, self.update_power)
         pass
 
     # update to store state

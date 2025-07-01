@@ -11,6 +11,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from app.frontend.store import Store
+
 
 class AudioSettings(QWidget):
     def __init__(self):
@@ -46,7 +48,25 @@ class AudioSettings(QWidget):
     def update_dual_slider(self, value: bool):
         self.dual_slider.setChecked(value)
         save_dual_slider_setting(value)
+        if value:
+            self.set_dual_search()
+        else:
+            self.bypass_dual_search()
 
     def update_value(self, attr: str, value):
         if hasattr(self, attr):
             setattr(self, attr, value)
+
+    def set_dual_search(self):
+        store = Store()
+        if store._state.stereo_width is None:
+            store.set_state("stereo_width", 0)
+        if store._state.spectral_centroid is None:
+            store.set_state("spectral_centroid", 40)
+
+    def bypass_dual_search(self):
+        store = Store()
+        store.set_state("stereo_width", None)
+        store.set_state("spectral_centroid", None)
+
+
