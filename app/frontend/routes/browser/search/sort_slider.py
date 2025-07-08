@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from app.frontend.components.knob_panel import KnobPanel
 from app.frontend.components.slider import Slider
 from app.frontend.settings import load_dual_slider_setting
 from app.frontend.store import Store, StoreState
@@ -76,7 +77,7 @@ class SortSlider(QWidget):
 
         layout.addWidget(self.power_button)
 
-        self.slider = Slider(
+        self.slider = KnobPanel(
             subscribe_to=subscribe_to,
             min_value=self.sub.min,
             max_value=self.sub.max,

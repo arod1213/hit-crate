@@ -14,21 +14,20 @@ def load_audio(path: str) -> Tuple[np.ndarray, int | float]:
 
 
 def normalize_audio(audio: np.ndarray, floor_db: float = -45):
+    peak = np.max(audio)
+    if peak == 0:
+        return audio
+
+    mult = 1 / peak
+    audio = audio * mult
+
     floor_amp = db_to_amp(floor_db)
-    # print(np.abs(audio))
-    # print(f"min is {np.min(np.abs(audio))}")
     gated_audio = audio[np.abs(audio) > floor_amp]
 
     if len(gated_audio) != 0:
         audio = gated_audio
 
-    peak = np.max(audio)
-    # print(f"min is {np.min(np.abs(audio))}")
-    if peak == 0:
-        return audio
-
-    mult = 1 / peak
-    return audio * mult
+    return audio 
 
 
 # array operations
