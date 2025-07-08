@@ -4,6 +4,7 @@ import librosa
 import numpy as np
 import soundfile as sf
 
+from app.backend.utils.audio import trans
 from app.backend.utils.audio.gain import get_lufs
 
 from .core import (
@@ -40,6 +41,8 @@ class AudioDetail:
         normalized_audio = pad_audio(normalized_audio)
         if len(normalized_audio) == 0:
             raise ValueError("Invalid audio: likely silent even after normalization")
+
+        self.onset_strength, self.decay_strength = trans.onset_strength(normalized_audio, sr)
 
         mel_spec = librosa.feature.melspectrogram(y=normalized_audio, sr=sr)
         S = spectral_centroid(mel_spec)
