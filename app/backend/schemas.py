@@ -7,8 +7,8 @@ from sqlmodel import SQLModel
 
 
 class AudioFormat(str, Enum):
-    wav = ".wav"
     # aif = ".aif"
+    wav = ".wav"
     mp3 = ".mp3"
 
 
@@ -51,6 +51,7 @@ class SampleUpdateMetaInput(SQLModel):
     stereo_width: Optional[float] = None
     spectral_centroid: Optional[float] = None
     rolloff: Optional[float] = None
+
 
 class SampleUpdateInput(SQLModel):
     is_favorite: Optional[bool] = None
