@@ -61,21 +61,3 @@ class Sample(Base):
     parent_directory: Mapped["Directory"] = relationship(
         "Directory", back_populates="samples"
     )
-
-
-# class Tag(SQLModel, table=True):
-#     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-#     name: str
-#
-#     # Relationship with the junction table
-#     sample_tags: List["SampleTag"] = Relationship(back_populates="tag")
-#
-#
-# class SampleTag(SQLModel, table=True):
-#     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-#
-#     # relationships
-#     sample_id: uuid.UUID = Field(foreign_key="sample.id")
-#     sample: Sample = Relationship(back_populates="sample_tags")
-#     tag_id: uuid.UUID = Field(foreign_key="tag.id")
-#     tag: Tag = Relationship(back_populates="sample_tags")
