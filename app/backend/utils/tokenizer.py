@@ -29,11 +29,11 @@ def tokenize(text: str) -> List[str]:
 
 
 def match_kick() -> List[str]:
-    return ["kik", "kick", "bass drum", "bd"]
+    return ["kik", "kick", "bassdrum", "bd"]
 
 
 def match_snare() -> List[str]:
-    return ["snr", "snare", "snare drum", "sd"]
+    return ["snr", "snare", "snaredrum", "sd"]
 
 
 def match_rim() -> List[str]:

@@ -5,6 +5,8 @@ from typing import Optional
 
 from sqlmodel import SQLModel
 
+supported_formats = {".wav", ".mp3"}
+
 
 class AudioFormat(str, Enum):
     # aif = ".aif"

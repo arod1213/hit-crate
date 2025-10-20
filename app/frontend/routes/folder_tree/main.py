@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Tuple
 
 from app.backend.db import engine
-from app.backend.services import DirectoryService
+from app.backend.services.hold import get_directories
 from app.frontend.signals import signals
 from app.frontend.store import Store
 from PyQt6.QtCore import QModelIndex, Qt
@@ -138,8 +138,8 @@ class FolderTree(QWidget):
         self.model.setHorizontalHeaderLabels(["Folders"])
 
         # Add top-level user-selected folders
-        with Session(engine) as session:
-            folder_paths = DirectoryService(session).query_directories()
+        with Session(engine) as db:
+            folder_paths = get_directories(db)
             for path in folder_paths:
                 self.add_top_level_folder(Path(path.path))
 

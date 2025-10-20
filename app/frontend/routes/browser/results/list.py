@@ -4,7 +4,7 @@ from typing import Optional
 from app.backend.db import engine
 from app.backend.models import Sample
 from app.backend.schemas import SampleSimilarInput
-from app.backend.services import SampleService
+from app.backend.services.hold import get_similar_samples
 from app.frontend.audio_engine import AudioEngine
 from app.frontend.components.draggable_list import DraggableList
 from app.frontend.routes.browser.results.context_menu import ContextMenu
@@ -127,8 +127,9 @@ class ResultList(QWidget):
         if sample is None:
             return
 
-        with Session(engine) as db_session:
-            data = SampleService(db_session).query_similar(
+        with Session(engine) as db:
+            data = get_similar_samples(
+                db,
                 path=Path(sample.path),
                 input=SampleSimilarInput(
                     name=self.store._state.search_key,
