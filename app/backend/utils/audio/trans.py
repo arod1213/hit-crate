@@ -7,7 +7,6 @@ def onset_strength(audio: np.ndarray, sr: int | float) -> Tuple[np.float32, np.f
     res = librosa.onset.onset_strength(y=audio, sr=sr)
 
     diff = np.diff(res)
-    print("diff", diff)
     onset_idx = np.argmax(diff)
     decay_idx = np.argmin(diff)
 

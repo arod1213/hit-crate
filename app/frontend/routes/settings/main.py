@@ -2,7 +2,11 @@ import threading
 from pathlib import Path
 
 from app.backend.db import engine
-from app.backend.services import DirectoryService
+from app.backend.services.hold import (
+    delete_directory,
+    get_directories,
+    rescan_directory,
+)
 from app.frontend.components import ToggleView
 from app.frontend.signals import signals
 from app.frontend.store import Store
@@ -22,8 +26,8 @@ from .open_dir import OpenDir
 
 
 def update_dir(dir: str):
-    with Session(engine) as session:
-        DirectoryService(session).rescan(Path(dir))
+    with Session(engine) as db:
+        rescan_directory(db, Path(dir))
 
 
 def rescan(dir: str):
@@ -52,8 +56,8 @@ class Settings(QWidget):
         dir_sel = OpenDir()
         self.main_layout.addWidget(dir_sel)
 
-        with Session(engine) as db_session:
-            data = DirectoryService(db_session).query_directories()
+        with Session(engine) as db:
+            data = get_directories(db)
             for dir in data:
                 item_widget = QWidget()
                 item_layout = QHBoxLayout(item_widget)
@@ -71,14 +75,18 @@ class Settings(QWidget):
                     icon="assets/refresh-icon.svg",
                     size=QSize(19, 19),
                 )
-                rescan_button.setToolTip("Rescans all files in the directory\nNote: Please allow up to a few minutes for large folders")
+                rescan_button.setToolTip(
+                    "Rescans all files in the directory\nNote: Please allow up to a few minutes for large folders"
+                )
                 rescan_button.clicked.connect(lambda _, p=dir.path: rescan(p))
                 # Delete Button
                 delete_button = MenuButton(text="delete", icon="assets/close-icon.svg")
                 delete_button.clicked.connect(
                     lambda _, p=dir.path: self.delete_directory(p)
                 )
-                delete_button.setToolTip("Deletes all files from the directory.\nWARNING: This can not be undone and will remove all favorites in the folder")
+                delete_button.setToolTip(
+                    "Deletes all files from the directory.\nWARNING: This can not be undone and will remove all favorites in the folder"
+                )
 
                 # Add to layout
                 item_layout.addWidget(icon_label)
@@ -103,7 +111,7 @@ class Settings(QWidget):
         self.setup_ui()
 
     def delete_directory(self, path: str):
-        with Session(engine) as db_session:
-            DirectoryService(db_session).delete(path)
+        with Session(engine) as db:
+            delete_directory(db, path)
         self.refresh_ui()
         signals.directory_removed.emit()

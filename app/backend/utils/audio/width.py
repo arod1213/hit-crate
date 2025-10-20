@@ -2,8 +2,7 @@ import librosa
 import numpy as np
 
 
-def get_stereo_width(path: str):
-    audio, _ = librosa.load(path=path, sr=1600, mono=False, res_type="soxr_lq")
+def get_stereo_width(audio: np.ndarray):
     left = audio[0]
     right = audio[1]
 
