@@ -60,7 +60,7 @@ class ResultList(QWidget):
         self.right_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Right), self)
         self.right_shortcut.activated.connect(lambda x=None: self.play_sample(x, True))
         self.left_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left), self)
-        self.left_shortcut.activated.connect(lambda x=None: self.audio_player.stop())
+        self.left_shortcut.activated.connect(lambda: self.audio_player.stop())
 
     def show_context_menu(self, position):
         item = self.results_list.itemAt(position)
