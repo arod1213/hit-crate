@@ -187,3 +187,4 @@ test.db
 *.svg
 build/
 dist/
+/*.sh

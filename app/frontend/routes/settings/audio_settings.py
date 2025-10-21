@@ -4,14 +4,13 @@ from app.frontend.settings import (
     save_auto_play_setting,
     save_dual_slider_setting,
 )
+from app.frontend.store import Store
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
     QWidget,
 )
-
-from app.frontend.store import Store
 
 
 class AudioSettings(QWidget):
@@ -38,7 +37,9 @@ class AudioSettings(QWidget):
         self.dual_slider.clicked.connect(
             lambda x=not is_dual_slider: self.update_dual_slider(x)
         )
-        self.dual_slider.setToolTip("Both Width and Frequency sliders will be active to filter your results more")
+        self.dual_slider.setToolTip(
+            "Both Width and Frequency sliders will be active to filter your results more"
+        )
         self.main_layout.addWidget(self.dual_slider)
 
     def update_auto_play(self, value: bool):
@@ -68,5 +69,3 @@ class AudioSettings(QWidget):
         store = Store()
         store.set_state("stereo_width", None)
         store.set_state("spectral_centroid", None)
-
-

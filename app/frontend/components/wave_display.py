@@ -26,10 +26,11 @@ class WaveDisplay(QWidget):
         if not sample:
             return
         waveform = wv.render_waveform(Path(sample.path))
-        # Apply smoothing
-        if waveform is not None:
-            self.waveform = waveform
-            self.update()
+
+        if waveform is None:
+            return
+        self.waveform = waveform
+        self.update()
 
     def mousePressEvent(self, a0: QMouseEvent | None):
         sample = self.store._state.selected_sample
@@ -39,12 +40,8 @@ class WaveDisplay(QWidget):
             drag = QDrag(self)
             mime_data = QMimeData()
 
-            # Important: QUrl.fromLocalFile makes the path usable in DAWs
             mime_data.setUrls([QUrl.fromLocalFile(sample.path)])
             drag.setMimeData(mime_data)
-
-            # Optional: set a pixmap to show during drag
-            # drag.setPixmap(self.grab())  # takes a snapshot of the widget
 
             drag.exec(Qt.DropAction.CopyAction)
 
