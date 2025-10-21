@@ -72,19 +72,12 @@ class SortSlider(QWidget):
         self.power_button.setIconSize(QSize(16, 16))
         self.power_button.setFixedSize(22, 22)
         self.power_button.clicked.connect(self.toggle_power)
-        self.power_button.setToolTip("Toggles the slider and switches to A-Z sorting instead")
+        self.power_button.setToolTip(
+            "Toggles the slider and switches to A-Z sorting instead"
+        )
         self.store.subscribe(self.subscribe_to, self.update_power)
 
         layout.addWidget(self.power_button)
-
-        self.slider = KnobPanel(
-            subscribe_to=subscribe_to,
-            min_value=self.sub.min,
-            max_value=self.sub.max,
-            text_left=self.sub.text_left,
-            text_right=self.sub.text_right,
-        )
-        layout.addWidget(self.slider)
 
         toggle_button = QIcon("assets/switch-icon.svg")
         self.toggle_button = QPushButton(text="", icon=toggle_button)
@@ -101,7 +94,9 @@ class SortSlider(QWidget):
         """
         )
         self.toggle_button.clicked.connect(self.rotate_sub)
-        self.toggle_button.setToolTip("Switches between sorting by dark/bright and mono/wide.\nNote: When dual search is enabled both can be active together")
+        self.toggle_button.setToolTip(
+            "Switches between sorting by dark/bright and mono/wide.\nNote: When dual search is enabled both can be active together"
+        )
         layout.addWidget(self.toggle_button)
 
     # switch subscriptable item

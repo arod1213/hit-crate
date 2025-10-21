@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMainWindow, QSplitter, QStackedWidget
 
@@ -74,6 +73,3 @@ class BrowserApp(QMainWindow):
 
     def run(self):
         self.show()
-    
-    def set_pin(self, enabled: bool):
-        self.setWindowFlags(QtCore.Qt.WindowType.WindowStaysOnTopHint)

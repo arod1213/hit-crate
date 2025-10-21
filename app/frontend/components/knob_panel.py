@@ -1,7 +1,6 @@
 from typing import Optional
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QDial, QHBoxLayout, QLabel, QSlider, QWidget
+from PyQt6.QtWidgets import QDial, QHBoxLayout, QLabel, QWidget
 
 from app.frontend.store import Store, StoreState
 

@@ -27,7 +27,7 @@ def create_sample(db: Session, path: Path, parent_path: Path) -> Sample:
         raise IsADirectoryError(f"path: {path} is a directory")
     parent_dir = get_directory(db, parent_path)
     if not parent_dir:
-        raise ValueError(f"{parent_path} could not be found")
+        raise FileNotFoundError(f"{parent_path} could not be found")
 
     match = get_sample(db, path)
     if match is not None:
@@ -66,7 +66,7 @@ def create_sample(db: Session, path: Path, parent_path: Path) -> Sample:
     return sample
 
 
-def delete_sample(db: Session, path: Path):
+def delete_sample(db: Session, path: Path) -> Optional[Sample]:
     sample = db.exec(select(Sample).where(Sample.path == str(path))).first()
 
     if not sample:
@@ -76,15 +76,15 @@ def delete_sample(db: Session, path: Path):
     return sample
 
 
-def get_sample(db: Session, path: Path):
+def get_sample(db: Session, path: Path) -> Optional[Sample]:
     return db.exec(select(Sample).where(Sample.path == str(path))).first()
 
 
-def update_sample_meta(db: Session, path: Path):
+def update_sample_meta(db: Session, path: Path) -> Optional[Sample]:
     metadata = AudioMeta(path)
     if metadata.format is None:  # if unsupported
         delete_sample(db, path)
-        return
+        return None
 
     detail = AudioDetail(path)
 
@@ -152,24 +152,24 @@ def rescan_sample(
     db: Session, path: Path, parent_path: Path, matching_sample: Optional[Sample]
 ):
     if not is_one_shot(path):
-        if matching_sample:
+        if matching_sample is not None:
             delete_sample(db, path)
         return
+
     if matching_sample:
         m_time_float = os.path.getmtime(path)
         modified_at = datetime.fromtimestamp(m_time_float)
         if modified_at != matching_sample.modified_at:
             update_sample_meta(db, path)
     else:
-        # print("create")
         create_sample(db, path, parent_path)
 
 
-def get_directories(db: Session):
+def get_directories(db: Session) -> Sequence[Directory]:
     return db.exec(select(Directory)).all()
 
 
-def get_samples_by_directory(db: Session, path: Path):
+def get_samples_by_directory(db: Session, path: Path) -> Sequence[Sample]:
     return db.exec(
         select(Sample).where(
             or_(
@@ -180,30 +180,29 @@ def get_samples_by_directory(db: Session, path: Path):
     ).all()
 
 
-def get_samples(self, input: SampleQueryInput) -> Sequence[Sample]:
+def get_samples(db: Session, input: SampleQueryInput) -> Sequence[Sample]:
     conditions = []
     order_conditions = []
 
-    # audio properties
-    if input.width is not None and input.spectral_centroid is None:
-        order_conditions.append(
-            func.abs(Sample.stereo_width - input.width).asc()  # type: ignore[arg-type]
-        )
+    match (input.width, input.spectral_centroid):
+        case (None, None):
+            pass
+        case (w, None):
+            order_conditions.append(func.abs(Sample.stereo_width - w).asc())
+        case (None, _):
+            order_conditions.append(Sample.name.asc())
+        case (w, _):
+            conditions.append(func.abs(Sample.stereo_width - w) < 10)
 
     if input.spectral_centroid is not None:
-        if input.width is not None:
-            conditions.append(func.abs(Sample.stereo_width - input.width) < 10)
-
         order_conditions.append(
             nullslast(
                 func.abs(
                     (Sample.spectral_centroid * 0.5 + Sample.rolloff * 0.5)
                     - input.spectral_centroid
-                ).asc()  # type: ignore[arg-type]
+                ).asc()
             )
         )
-    if input.spectral_centroid is None and input.width is None:
-        order_conditions.append(Sample.name.asc())
 
     # check if name is like
     def add_name_condition(text: str):
@@ -213,16 +212,19 @@ def get_samples(self, input: SampleQueryInput) -> Sequence[Sample]:
     if input.name and input.name.strip():
         token_conditions = []
         matches = tokenize(input.name)
+
         for word in input.name.lower().split():
-            if word not in matches:
-                conditions.append(add_name_condition(word))
+            conditions.append(add_name_condition(word))
 
         for word in matches:
             token_conditions.append(add_name_condition(word))
-        conditions.append(or_(*token_conditions))
+
+        if len(token_conditions) > 0:
+            conditions.append(or_(*token_conditions))
 
     if input.is_favorite is True:
         conditions.append(Sample.is_favorite == True)
+
     if input.path is not None:
         conditions.append(
             or_(
@@ -231,7 +233,7 @@ def get_samples(self, input: SampleQueryInput) -> Sequence[Sample]:
             )
         )
 
-    samples = self.session.exec(
+    samples = db.exec(
         select(Sample).where(*conditions).order_by(*order_conditions).limit(2000)
     ).all()
     return samples
@@ -254,7 +256,7 @@ def get_directory(db: Session, path: Path) -> Optional[Directory]:
     return db.exec(select(Directory).where(Directory.path == str(path))).first()
 
 
-def delete_directory(db: Session, path: str):
+def delete_directory(db: Session, path: str) -> Optional[Directory]:
     dir = db.exec(select(Directory).where(Directory.path == str(path))).first()
 
     if not dir:
@@ -273,8 +275,8 @@ def create_directory(db: Session, path: Path) -> Directory:
     match get_directory(db, path):
         case None:
             pass
-        case e:
-            return e
+        case d:
+            return d
 
     dir = Directory(path=str(path))
     db.add(dir)
