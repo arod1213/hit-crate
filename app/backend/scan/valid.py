@@ -1,5 +1,6 @@
-from app.backend.schemas import AudioFormat
 from pathlib import Path
+
+from app.backend.schemas import AudioFormat
 
 
 def get_valid_files(path: Path):

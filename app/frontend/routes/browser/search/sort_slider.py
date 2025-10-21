@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from app.frontend.components.knob_panel import KnobPanel
 from app.frontend.components.slider import Slider
 from app.frontend.settings import load_dual_slider_setting
 from app.frontend.store import Store, StoreState
@@ -78,6 +77,15 @@ class SortSlider(QWidget):
         self.store.subscribe(self.subscribe_to, self.update_power)
 
         layout.addWidget(self.power_button)
+
+        self.slider = Slider(
+            subscribe_to=subscribe_to,
+            min_value=self.sub.min,
+            max_value=self.sub.max,
+            text_left=self.sub.text_left,
+            text_right=self.sub.text_right,
+        )
+        layout.addWidget(self.slider)
 
         toggle_button = QIcon("assets/switch-icon.svg")
         self.toggle_button = QPushButton(text="", icon=toggle_button)
