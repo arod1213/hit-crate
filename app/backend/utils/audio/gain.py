@@ -11,5 +11,5 @@ def get_lufs(audio: np.ndarray, sr: int | float, min_duration=0.5) -> float:
         padded = np.pad(audio, (0, target_len - len(audio)), "constant")
 
     meter = pyln.Meter(sr)  # defaults to K-weighting
-    lufs = meter.integrated_loudness(padded)
+    lufs = meter.integrated_loudness(padded.astype(np.float64))
     return lufs

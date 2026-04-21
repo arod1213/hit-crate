@@ -47,8 +47,8 @@ def create_sample(db: Session, path: Path, parent_path: Path) -> Sample:
     sample = Sample(
         name=path.stem,
         modified_at=datetime.fromtimestamp(m_time_float),
-        path=path,
-        parent_path=parent_path,
+        path=str(path),
+        parent_path=str(parent_path),
         format=metadata.format,
         duration=metadata.duration,
         sample_rate=metadata.sample_rate,
@@ -285,7 +285,7 @@ def create_directory(db: Session, path: Path) -> Directory:
 
     if dir is not None:
         new_thread = threading.Thread(
-            target=rescan_directory, args=(path,), daemon=True
+            target=rescan_directory, args=(db, path), daemon=True
         )
         new_thread.start()
 

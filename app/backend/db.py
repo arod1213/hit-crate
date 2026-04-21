@@ -9,21 +9,23 @@ from app.backend.models import Base
 APP_NAME = "HitCrate"
 
 
-def get_default_db_path():
+def get_default_db_path() -> Path:
     support_dir = Path.home() / "Library" / "Application Support" / APP_NAME
     support_dir.mkdir(parents=True, exist_ok=True)
     return support_dir / "hitcrate.db"
 
 
 load_dotenv()
-env_db_url = os.getenv("DATABASE_URL")
+# env_db_url = os.getenv("DATABASE_URL")
+#
+# if env_db_url:
+#     DATABASE_URL = env_db_url
+# else:
+#     db_path = get_default_db_path()
+#     DATABASE_URL = f"sqlite:///{db_path}"
 
-if env_db_url:
-    DATABASE_URL = env_db_url
-else:
-    db_path = get_default_db_path()
-    DATABASE_URL = f"sqlite:///{db_path}"
-
+db_path = get_default_db_path()
+DATABASE_URL = f"sqlite:///{str(db_path)}"
 engine = create_engine(DATABASE_URL, echo=False)
 
 

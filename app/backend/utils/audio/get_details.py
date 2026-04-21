@@ -32,7 +32,10 @@ class AudioDetail:
         else:
             self.stereo_width = get_stereo_width(audio_stereo)
 
-        audio_mono = np.mean(audio_stereo, axis=0)
+        if audio_stereo.ndim == 1:
+            audio_mono = audio_stereo
+        else:
+            audio_mono = np.mean(audio_stereo, axis=0)
         audio_mono = pad_audio(audio_mono)
 
         normalized_audio = normalize_audio(audio_mono, floor_db=-35)
