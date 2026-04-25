@@ -174,7 +174,7 @@ def get_samples_by_directory(db: Session, path: Path) -> Sequence[Sample]:
         select(Sample).where(
             or_(
                 Sample.parent_path == str(path),
-                Sample.path.contains(str(path)),
+                Sample.path.startswith(str(path), autoescape=True),
             )
         )
     ).all()
@@ -229,7 +229,7 @@ def get_samples(db: Session, input: SampleQueryInput) -> Sequence[Sample]:
         conditions.append(
             or_(
                 Sample.parent_path == str(input.path),
-                Sample.path.contains(str(input.path)),
+                Sample.path.startswith(str(input.path), autoescape=True),
             )
         )
 

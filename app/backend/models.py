@@ -10,6 +10,7 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
 )
@@ -34,6 +35,14 @@ class Directory(Base):
 
 class Sample(Base):
     __tablename__ = "sample"
+    __table_args__ = (
+        Index("ix_sample_parent_path", "parent_path"),
+        Index("ix_sample_is_favorite", "is_favorite"),
+        Index("ix_sample_parent_path_is_favorite", "parent_path", "is_favorite"),
+        Index("ix_sample_stereo_width", "stereo_width"),
+        Index("ix_sample_spectral_centroid", "spectral_centroid"),
+        Index("ix_sample_rolloff", "rolloff"),
+    )
 
     path: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
