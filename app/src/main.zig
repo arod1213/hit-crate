@@ -72,7 +72,7 @@ pub fn main(init: std.process.Init) !void {
                 defer _ = render_arena.reset(.free_all);
 
                 try tui.render(&wrt.interface, &app);
-                try tui.handleKeys(alloc, &app, &rdr.interface);
+                try tui.handleKeys(io, alloc, &app, &rdr.interface);
             }
         },
     }

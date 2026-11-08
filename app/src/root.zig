@@ -37,6 +37,14 @@ pub const SampleEntry = struct {
         const avg = (rms_amp + lufs_amp + tp_amp) / 3;
         return @min(2, avg);
     }
+
+    pub fn revealFile(self: Self, io: Io) !void {
+        _ = try std.process.spawn(io, .{
+            .argv = &[_][]const u8{
+                "open", "-R", self.fullpath,
+            },
+        });
+    }
 };
 
 pub fn Range(comptime T: type) type {

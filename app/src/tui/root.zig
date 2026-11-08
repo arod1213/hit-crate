@@ -33,9 +33,9 @@ pub fn render(w: *Io.Writer, app: *const App) !void {
     try w.flush();
 }
 
-pub fn handleKeys(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
+pub fn handleKeys(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
     return switch (app.mode) {
-        .scroll => handleScroll(alloc, app, rdr),
+        .explore => handleExplore(io, alloc, app, rdr),
         .search => handleSearch(alloc, app, rdr),
     };
 }
@@ -43,7 +43,7 @@ pub fn handleKeys(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
 pub fn handleSearch(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
     const b = try rdr.takeByte();
     switch (b) {
-        '\n', '\r', 0x1B => app.mode = .scroll,
+        '\n', '\r', 0x1B => app.mode = .explore,
         0x7F, 0x08 => _ = {
             _ = app.search_text.pop();
             app.page = 0;
@@ -57,10 +57,14 @@ pub fn handleSearch(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
     }
 }
 
-pub fn handleScroll(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
+pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
     const key = try input.KeyCode.parse(rdr) orelse return {};
 
     switch (key) {
+        .y => {
+            const curr = app.currFile() orelse return;
+            try curr.revealFile(io);
+        },
         .back_slash => app.mode = .search,
         .o => {
             app.params.order_asc = !app.params.order_asc;

@@ -5,10 +5,10 @@ const Allocator = std.mem.Allocator;
 const lib = @import("lib");
 const ma = lib.miniaudio;
 
-const Mode = enum { search, scroll };
+const Mode = enum { search, explore };
 
 idx: usize,
-mode: Mode = .scroll,
+mode: Mode = .explore,
 engine: [*c]ma.ma_engine,
 sound: ?[*c]ma.ma_sound = null,
 samples: []lib.SampleEntry,
