@@ -62,84 +62,61 @@ pub const OrderParams = enum {
     }
 };
 pub const SearchParams = struct {
+    search_name: []const u8,
     width: Range(f32) = .{ .target = 100, .tolerance_lower = 100, .tolerance_upper = 100 },
+    centroid: Range(f32) = .{ .target = 50, .tolerance_lower = 0, .tolerance_upper = 5_000 },
     order_by: OrderParams = .width,
     order_asc: bool = true,
 };
 
-pub fn audioFilesDb(gpa: Allocator, conn: db.Connection, params: SearchParams, limit: usize, page: usize) ![]SampleEntry {
+pub fn querySamples(gpa: Allocator, conn: db.Connection, params: SearchParams, limit: usize, page: usize) ![]SampleEntry {
+    const name_clause = if (params.search_name.len > 0)
+        "lower(name) LIKE lower(?1) || '%'"
+    else
+        "?1 is null";
+
     const sql = try std.fmt.allocPrintSentinel(gpa,
         \\ SELECT path, name, width, true_peak, rms, centroid
         \\ FROM samples 
-        \\ WHERE lufs is not null 
-        \\ AND width BETWEEN (?1 - ?2) and (?1 + ?3)
-        \\ AND centroid > 0
+        \\ WHERE {s}
+        \\ AND width BETWEEN (?2 - ?3) and (?2 + ?4)
+        \\ AND centroid BETWEEN (?5 - ?6) and (?5 + ?7)
         \\ {s}
-        \\ LIMIT ?4 OFFSET ?5
-    , .{params.order_by.asClause(params.order_asc)}, 0);
+        \\ LIMIT ?8 OFFSET ?9
+    , .{ name_clause, params.order_by.asClause(params.order_asc) }, 0);
     defer gpa.free(sql);
 
     const stmt = try db.prepare(conn, sql);
     defer db.stmtClose(stmt) catch {};
     try db.stmtBindMany(stmt, .{
+        if (params.search_name.len == 0) null else params.search_name,
         params.width.target,
         params.width.tolerance_lower,
         params.width.tolerance_upper,
+        params.centroid.target,
+        params.centroid.tolerance_lower,
+        params.centroid.tolerance_upper,
         limit,
         page * limit,
     });
 
-    var list = try std.ArrayList(SampleEntry).initCapacity(gpa, 50);
-    defer list.deinit(gpa);
+    var sample_list = try std.ArrayList(SampleEntry).initCapacity(gpa, 50);
+    defer sample_list.deinit(gpa);
 
     while (true) {
         const res = try db.stmtStep(stmt);
         if (res != .Row) break;
 
-        var e = std.mem.zeroes(SampleEntry);
+        var sample = std.mem.zeroes(SampleEntry);
         try db.stmtReadMany(gpa, stmt, .{
-            &e.fullpath,
-            &e.basename,
-            &e.width,
-            &e.true_peak,
-            &e.rms,
-            &e.centroid,
+            &sample.fullpath,
+            &sample.basename,
+            &sample.width,
+            &sample.true_peak,
+            &sample.rms,
+            &sample.centroid,
         });
-        try list.append(gpa, e);
+        try sample_list.append(gpa, sample);
     }
-    return try list.toOwnedSlice(gpa);
-}
-
-pub fn audioFiles(alloc: Allocator, io: Io, path: []const u8) ![]SampleEntry {
-    const cwd = Io.Dir.cwd();
-    var dir = try Io.Dir.openDir(cwd, io, path, .{ .iterate = true });
-    defer dir.close(io);
-
-    var list = try std.ArrayList(SampleEntry).initCapacity(alloc, 500);
-    defer list.deinit(alloc);
-
-    var iter = try dir.walk(std.heap.page_allocator);
-    defer iter.deinit();
-
-    while (try iter.next(io)) |entry| {
-        switch (entry.kind) {
-            .file => {},
-            else => continue,
-        }
-        if (audio.AudioExt.fromPath(entry.basename) == null) continue;
-        const fullpath = try std.fs.path.join(alloc, &[_][]const u8{ path, entry.path });
-        const base = try alloc.dupe(u8, entry.basename);
-        const e = SampleEntry{
-            .fullpath = fullpath,
-            .basename = base,
-            .lufs = null,
-        };
-        try list.append(alloc, e);
-    }
-
-    return try list.toOwnedSlice(alloc);
-}
-
-test {
-    std.testing.refAllDecls(@This());
+    return try sample_list.toOwnedSlice(gpa);
 }

@@ -5,10 +5,14 @@ const Allocator = std.mem.Allocator;
 const lib = @import("lib");
 const ma = lib.miniaudio;
 
+const Mode = enum { search, scroll };
+
 idx: usize,
+mode: Mode = .scroll,
 engine: [*c]ma.ma_engine,
 sound: ?[*c]ma.ma_sound = null,
 samples: []lib.SampleEntry,
+search_text: std.ArrayList(u8),
 
 target_lufs: f32 = -17.0,
 params: lib.SearchParams,

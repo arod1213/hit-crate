@@ -99,12 +99,16 @@ pub const KeyCode = enum(u8) {
     down,
     up,
     space,
+    forward_slash,
+    back_slash,
 
     pub fn parse(rdr: *Io.Reader) !?KeyCode {
         const b = try rdr.takeByte();
 
         switch (b) {
             ' ' => return .space,
+            '/' => return .forward_slash,
+            '\\' => return .back_slash,
             0x1B => {
                 if (rdr.bufferedLen() == 0) return null;
                 switch (try rdr.takeByte()) {

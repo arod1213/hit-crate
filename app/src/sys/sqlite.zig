@@ -142,17 +142,28 @@ pub fn prepare(conn: Connection, sql: [:0]const u8) !Statement {
 pub fn stmtBindMany(stmt: Statement, args: anytype) !void {
     const ArgsType = @TypeOf(args);
     const info = @typeInfo(ArgsType);
-    assert(info == .@"struct");
-
-    const field_names = info.@"struct".field_names;
-    const field_types = info.@"struct".field_types;
-    inline for (field_names, 0..) |name, idx| {
-        const T = field_types[idx];
-        const val = @field(args, name);
-        stmtBind(T, stmt, val, idx + 1) catch |e| {
-            std.log.err("fucking err on {d}: {}: {}", .{ idx + 1, T, e });
-            return e;
-        };
+    switch (info) {
+        .@"struct" => {
+            const field_names = info.@"struct".field_names;
+            const field_types = info.@"struct".field_types;
+            inline for (field_names, 0..) |name, idx| {
+                const T = field_types[idx];
+                const val = @field(args, name);
+                stmtBind(T, stmt, val, idx + 1) catch |e| {
+                    std.log.err("fucking err on {d}: {}: {}", .{ idx + 1, T, e });
+                    return e;
+                };
+            }
+        },
+        .array => |x| {
+            for (0..x.len) |idx| {
+                stmtBind(x.child, stmt, args[idx], idx + 1) catch |e| {
+                    std.log.err("fucking err on {d}: {}: {}", .{ idx + 1, x.child, e });
+                    return e;
+                };
+            }
+        },
+        else => @compileError("unsupported param type"),
     }
 }
 

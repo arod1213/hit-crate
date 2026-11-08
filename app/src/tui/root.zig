@@ -9,7 +9,15 @@ pub const input = @import("input.zig");
 
 pub fn render(w: *Io.Writer, app: *const App) !void {
     _ = try w.write("\x1b[2J\x1b[H");
-    _ = try w.print("order: {s}\n", .{@tagName(app.params.order_by)});
+
+    _ = try w.print("order: {s} {}\n", .{
+        @tagName(app.params.order_by),
+        app.params.order_asc,
+    });
+    _ = try w.print("search: {s}\n", .{
+        app.params.search_name,
+    });
+
     for (app.samples, 0..) |sample, idx| {
         if (idx == app.idx) {
             try w.print(">: {s} (c: {d} w: {d} p: {d}\n", .{
@@ -26,9 +34,34 @@ pub fn render(w: *Io.Writer, app: *const App) !void {
 }
 
 pub fn handleKeys(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
+    return switch (app.mode) {
+        .scroll => handleScroll(alloc, app, rdr),
+        .search => handleSearch(alloc, app, rdr),
+    };
+}
+
+pub fn handleSearch(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
+    const b = try rdr.takeByte();
+    switch (b) {
+        '\n', '\r', 0x1B => app.mode = .scroll,
+        0x7F, 0x08 => _ = {
+            _ = app.search_text.pop();
+            app.page = 0;
+            app.idx = 0;
+        },
+        else => {
+            try app.search_text.append(alloc, b);
+            app.page = 0;
+            app.idx = 0;
+        },
+    }
+}
+
+pub fn handleScroll(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
     const key = try input.KeyCode.parse(rdr) orelse return {};
 
     switch (key) {
+        .back_slash => app.mode = .search,
         .o => {
             app.params.order_asc = !app.params.order_asc;
             app.page = 0;

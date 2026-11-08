@@ -2,9 +2,9 @@ const std = @import("std");
 const Io = std.Io;
 const Allocator = std.mem.Allocator;
 
+const lib = @import("zigs");
+const db = lib.db;
 const tui = @import("tui");
-const zigs = @import("zigs");
-const db = zigs.db;
 
 const cmd = enum { scan, read };
 
@@ -21,7 +21,7 @@ pub fn main(init: std.process.Init) !void {
         .scan => {
             const conn = try db.connect("test.db", false);
             defer db.close(conn);
-            try zigs.scanner.saveDir(io, path, conn);
+            try lib.scanner.saveDir(io, path, conn);
         },
         .read => {
             const conn = try db.connect("test.db", true);
@@ -39,21 +39,27 @@ pub fn main(init: std.process.Init) !void {
             const stdout = Io.File.stdout();
             var wrt = stdout.writer(io, &out_buffer);
 
-            const engine = try zigs.ma.engineNew(alloc);
-            defer zigs.ma.engineClose(engine);
+            const engine = try lib.ma.engineNew(alloc);
+            defer lib.ma.engineClose(engine);
+
+            var search = try std.ArrayList(u8).initCapacity(alloc, 10);
+            defer search.deinit(alloc);
 
             var app = tui.App{
                 .limit = 10,
                 .page = 0,
                 .idx = 0,
-                .samples = &[0]zigs.SampleEntry{},
+                .samples = &[0]lib.SampleEntry{},
                 .engine = engine,
-                .params = zigs.SearchParams{},
+                .search_text = search,
+                .params = lib.SearchParams{
+                    .search_name = "kick",
+                },
             };
             defer {
                 if (app.sound) |snd| {
-                    zigs.ma.soundStop(snd) catch {};
-                    zigs.ma.soundClose(snd);
+                    lib.ma.soundStop(snd) catch {};
+                    lib.ma.soundClose(snd);
                 }
             }
 
@@ -61,7 +67,8 @@ pub fn main(init: std.process.Init) !void {
             defer render_arena.deinit();
             const render_alloc = render_arena.allocator();
             while (true) {
-                app.samples = try zigs.audioFilesDb(render_alloc, conn, app.params, app.limit, app.page);
+                app.params.search_name = app.search_text.items;
+                app.samples = try lib.querySamples(render_alloc, conn, app.params, app.limit, app.page);
                 defer _ = render_arena.reset(.free_all);
 
                 try tui.render(&wrt.interface, &app);
