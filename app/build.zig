@@ -31,6 +31,9 @@ pub fn build(b: *std.Build) void {
     sqlite_mod.addCSourceFile(.{
         .file = b.path("include/sqlite3.c"),
         .language = .c,
+        .flags = &[_][]const u8{
+            "-DSQLITE_ENABLE_FTS5",
+        },
     });
 
     const kissfft = b.addTranslateC(.{

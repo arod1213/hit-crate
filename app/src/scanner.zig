@@ -55,7 +55,7 @@ fn consumerLoop(io: Io, conn: db.Connection, consumer: *InsertQueue) !void {
     defer db.txRollback(conn);
 
     const sql = "INSERT INTO samples (path, name, ext, duration_ms, lufs, true_peak, rms, width, centroid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING";
-    const BATCH_SIZE = 200_000;
+    const BATCH_SIZE = 10_000;
     const stmt = try db.prepare(conn, sql);
     defer db.stmtClose(stmt) catch {};
 

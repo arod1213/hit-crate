@@ -7,6 +7,8 @@ const lib = @import("lib");
 pub const App = @import("app.zig");
 pub const input = @import("input.zig");
 
+pub const RenderDepth = enum { all, ui };
+
 pub fn render(w: *Io.Writer, app: *const App) !void {
     _ = try w.write("\x1b[2J\x1b[H");
 
@@ -33,11 +35,14 @@ pub fn render(w: *Io.Writer, app: *const App) !void {
     try w.flush();
 }
 
-pub fn handleKeys(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
-    return switch (app.mode) {
-        .explore => handleExplore(io, alloc, app, rdr),
-        .search => handleSearch(alloc, app, rdr),
-    };
+pub fn handleKeys(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !RenderDepth {
+    switch (app.mode) {
+        .explore => return try handleExplore(io, alloc, app, rdr),
+        .search => {
+            try handleSearch(alloc, app, rdr);
+            return .all;
+        },
+    }
 }
 
 pub fn handleSearch(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
@@ -57,20 +62,23 @@ pub fn handleSearch(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
     }
 }
 
-pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
-    const key = try input.KeyCode.parse(rdr) orelse return {};
+pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !RenderDepth {
+    const key = try input.KeyCode.parse(rdr) orelse return .ui;
 
+    var depth: RenderDepth = .ui;
     switch (key) {
         .y => {
-            const curr = app.currFile() orelse return;
+            const curr = app.currFile() orelse return depth;
             try curr.revealFile(io);
         },
         .back_slash => app.mode = .search,
         .o => {
+            depth = .all;
             app.params.order_asc = !app.params.order_asc;
             app.page = 0;
         },
         .m => {
+            depth = .all;
             app.params.order_by = switch (app.params.order_by) {
                 .width => .centroid,
                 .name => .width,
@@ -78,12 +86,21 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !void
             };
             app.page = 0;
         },
-        .down => app.next(),
-        .up => app.prev(),
-        .right => app.page +|= 1,
-        .left => app.page -|= 1,
+        .down => {
+            if (app.next()) depth = .all;
+        },
+        .up => {
+            if (app.prev()) depth = .all;
+        },
+        .right => {
+            depth = .all;
+            if (app.nextPage()) depth = .all;
+        },
+        .left => {
+            if (app.prevPage()) depth = .all;
+        },
         .space => {
-            const curr = app.currFile() orelse return;
+            const curr = app.currFile() orelse return depth;
             if (app.sound) |snd| {
                 try lib.ma.soundStop(snd);
                 lib.ma.soundClose(snd);
@@ -98,4 +115,5 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !void
         },
         else => {},
     }
+    return depth;
 }

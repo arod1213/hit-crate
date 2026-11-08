@@ -63,9 +63,9 @@ pub const OrderParams = enum {
     pub fn asClause(self: Self, order_asc: bool) []const u8 {
         return switch (self) {
             inline else => |tag| if (order_asc)
-                "ORDER BY " ++ @tagName(tag) ++ " ASC"
+                "ORDER BY s." ++ @tagName(tag) ++ " ASC"
             else
-                "ORDER BY " ++ @tagName(tag) ++ " DESC",
+                "ORDER BY s." ++ @tagName(tag) ++ " DESC",
         };
     }
 };
@@ -78,20 +78,28 @@ pub const SearchParams = struct {
 };
 
 pub fn querySamples(gpa: Allocator, conn: db.Connection, params: SearchParams, limit: usize, page: usize) ![]SampleEntry {
-    const name_clause = if (params.search_name.len > 0)
-        "lower(name) LIKE lower(?1) || '%'"
-    else
-        "?1 is null";
-
-    const sql = try std.fmt.allocPrintSentinel(gpa,
-        \\ SELECT path, name, width, true_peak, rms, centroid
-        \\ FROM samples 
-        \\ WHERE {s}
-        \\ AND width BETWEEN (?2 - ?3) and (?2 + ?4)
-        \\ AND centroid BETWEEN (?5 - ?6) and (?5 + ?7)
-        \\ {s}
-        \\ LIMIT ?8 OFFSET ?9
-    , .{ name_clause, params.order_by.asClause(params.order_asc) }, 0);
+    const sql =
+        if (params.search_name.len > 0)
+            try std.fmt.allocPrintSentinel(gpa,
+                \\ SELECT s.path, s.name, s.width, s.true_peak, s.rms, s.centroid
+                \\ FROM samples s
+                \\ JOIN samples_fts f on f.rowid = s.rowid
+                \\ WHERE f.name MATCH ?1 || '*'
+                \\ AND s.width BETWEEN (?2 - ?3) and (?2 + ?4)
+                \\ AND s.centroid BETWEEN (?5 - ?6) and (?5 + ?7)
+                \\ {s}
+                \\ LIMIT ?8 OFFSET ?9
+            , .{params.order_by.asClause(params.order_asc)}, 0)
+        else
+            try std.fmt.allocPrintSentinel(gpa,
+                \\ SELECT s.path, s.name, s.width, s.true_peak, s.rms, s.centroid
+                \\ FROM samples s
+                \\ WHERE ?1 IS NULL
+                \\ AND s.width BETWEEN (?2 - ?3) and (?2 + ?4)
+                \\ AND s.centroid BETWEEN (?5 - ?6) and (?5 + ?7)
+                \\ {s}
+                \\ LIMIT ?8 OFFSET ?9
+            , .{params.order_by.asClause(params.order_asc)}, 0);
     defer gpa.free(sql);
 
     const stmt = try db.prepare(conn, sql);

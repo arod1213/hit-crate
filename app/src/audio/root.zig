@@ -124,6 +124,9 @@ pub fn spectralCentroid(gpa: Allocator, frames: []const f32, sr: usize, ch: usiz
     assert(sr != 0);
 
     const num_frames = @divFloor(frames.len, ch);
+    if (num_frames == 0) return error.NoFrames;
+    const BIN_WIDTH = 1024;
+    if (num_frames < BIN_WIDTH) return error.NotEnoughFrames;
 
     var mono_frames = try gpa.alloc(kfft.kiss_fft_cpx, num_frames);
     defer gpa.free(mono_frames);
@@ -141,8 +144,9 @@ pub fn spectralCentroid(gpa: Allocator, frames: []const f32, sr: usize, ch: usiz
     }
 
     assert(num_frames <= mono_frames.len);
-    const BIN_WIDTH = 1024;
     var bins = std.mem.zeroes([BIN_WIDTH]kfft.kiss_fft_cpx);
+
+    // TODO: step through all samples here so better reading
 
     const cfg = kfft.kiss_fft_alloc(BIN_WIDTH, 0, null, 0) orelse {
         return error.FFTAllocFailed;

@@ -66,13 +66,17 @@ pub fn main(init: std.process.Init) !void {
             var render_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
             defer render_arena.deinit();
             const render_alloc = render_arena.allocator();
+
+            var depth: tui.RenderDepth = .all;
             while (true) {
                 app.params.search_name = app.search_text.items;
-                app.samples = try lib.querySamples(render_alloc, conn, app.params, app.limit, app.page);
-                defer _ = render_arena.reset(.free_all);
+                if (depth == .all) {
+                    _ = render_arena.reset(.free_all);
+                    app.samples = try lib.querySamples(render_alloc, conn, app.params, app.limit, app.page);
+                }
 
                 try tui.render(&wrt.interface, &app);
-                try tui.handleKeys(io, alloc, &app, &rdr.interface);
+                depth = try tui.handleKeys(io, alloc, &app, &rdr.interface);
             }
         },
     }
