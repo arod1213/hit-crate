@@ -12,7 +12,7 @@ pub fn main(init: std.process.Init) !void {
     const io = init.io;
     const alloc = init.arena.allocator();
 
-    const db_url = init.environ_map.get("DB_URL") orelse return error.MissingDB;
+    const db_url = init.environ_map.get("HIT_CRATE_DB") orelse return error.MissingDB;
     const db_url_cstr = try alloc.dupeSentinel(u8, db_url, 0);
 
     const args = try init.minimal.args.toSlice(alloc);

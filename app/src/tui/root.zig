@@ -9,37 +9,43 @@ pub const input = @import("input.zig");
 
 pub const RenderDepth = enum { all, ui };
 
+const reset = "\x1b[0m";
+const dim = "\x1b[2m";
+const blue = "\x1b[34m";
+const green = "\x1b[32m";
+const yellow = "\x1b[33m";
+
 pub fn render(w: *Io.Writer, app: *const App) !void {
     _ = try w.write("\x1b[2J\x1b[H");
 
-    _ = try w.print("order: {s} {s}", .{
+    _ = try w.print(dim ++ "order: " ++ reset ++ blue ++ "{s} {s}" ++ reset, .{
         @tagName(app.params.order_by),
         if (app.params.order_asc) "asc" else "desc",
     });
-    _ = try w.write(" | ");
+    _ = try w.write(dim ++ " | " ++ reset);
 
     switch (app.active_param) {
-        .centroid => try w.print("centroid {f}\n", .{app.params.centroid}),
-        .width => try w.print("width {f}\n", .{app.params.width}),
+        .centroid => try w.print(dim ++ "centroid " ++ reset ++ blue ++ "{f}" ++ reset ++ "\n", .{app.params.centroid}),
+        .width => try w.print(dim ++ "width " ++ reset ++ blue ++ "{f}" ++ reset ++ "\n", .{app.params.width}),
     }
 
     const div: [60]u8 = @splat('-');
-    _ = try w.print("{s}\n", .{&div});
+    _ = try w.print(dim ++ "{s}" ++ reset ++ "\n", .{&div});
 
-    _ = try w.print("search: {s}\n", .{
+    _ = try w.print(dim ++ "search: " ++ reset ++ yellow ++ "{s}" ++ reset ++ "\n", .{
         app.params.search_text,
     });
 
     for (app.samples, 0..) |sample, idx| {
         if (idx == app.idx) {
-            try w.print(">: {s} (c: {d} w: {d} p: {d}\n", .{
+            try w.print(green ++ "> {s}" ++ reset ++ dim ++ " (c: {d} w: {d} p: {d})" ++ reset ++ "\n", .{
                 sample.basename,
                 sample.centroid orelse 0,
                 sample.width,
                 sample.true_peak orelse 0,
             });
         } else {
-            try w.print(" : {s}\n", .{sample.basename});
+            try w.print("  {s}\n", .{sample.basename});
         }
     }
     try w.flush();
@@ -101,10 +107,12 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
                 .width => app.params.width.moveTolerance(5),
             }
         },
+        // toggle order direction
         .o => {
             app.params.order_asc = !app.params.order_asc;
             app.page = 0;
         },
+        // toggle order mode
         .m => {
             app.params.order_by = switch (app.params.order_by) {
                 .width => .centroid,
@@ -118,6 +126,14 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
             depth = .ui;
             app.mode = .search;
         },
+        // reset
+        .r => {
+            app.search_text.clearAndFree(alloc);
+            app.params = .{
+                .search_text = app.search_text.items,
+            };
+        },
+        // toggle active
         .a => {
             depth = .ui;
             app.active_param = switch (app.active_param) {
@@ -125,23 +141,29 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
                 .width => .centroid,
             };
         },
+        // open selected
         .y => {
             depth = .ui;
             const curr = app.currFile() orelse return depth;
             try curr.revealFile(io);
         },
+        // cursor down
         .down => {
             if (!app.next()) depth = .ui;
         },
+        // cursor up
         .up => {
             if (!app.prev()) depth = .ui;
         },
+        // page next
         .right => {
             if (!app.nextPage()) depth = .ui;
         },
+        // page prev
         .left => {
             if (!app.prevPage()) depth = .ui;
         },
+        // play selected
         .space => {
             depth = .ui;
             const curr = app.currFile() orelse return depth;
