@@ -153,25 +153,43 @@ pub fn spectralCentroid(gpa: Allocator, frames: []const f32, sr: usize, ch: usiz
     };
     defer kfft.kiss_fft_free(cfg);
 
-    kfft.kiss_fft(cfg, @ptrCast(mono_frames), bins[0..].ptr);
+    var centroids = try std.ArrayList(f32).initCapacity(gpa, 50);
+    defer centroids.deinit(gpa);
+
+    var mono_window = std.mem.window(kfft.kiss_fft_cpx, mono_frames, BIN_WIDTH, @divFloor(BIN_WIDTH, 2));
+    while (mono_window.next()) |set| {
+        const centroid = centroidFromFrames(cfg, BIN_WIDTH, &bins, set, sr) orelse continue;
+        try centroids.append(gpa, centroid);
+    }
+
+    if (centroids.items.len == 0) return error.NoWindows;
+    var sum: f32 = 0;
+    for (centroids.items) |item| sum += item;
+    return sum / @as(f32, @floatFromInt(centroids.items.len));
+}
+
+fn centroidFromFrames(cfg: *kfft.struct_kiss_fft_state, bin_width: usize, bins: []kfft.kiss_fft_cpx, frames: []const kfft.kiss_fft_cpx, sr: usize) ?f32 {
+    kfft.kiss_fft(cfg, @ptrCast(frames), bins[0..].ptr);
     var weighted_sum: f32 = 0;
     var mag_sum: f32 = 0;
 
-    const half = @divFloor(BIN_WIDTH, 2);
+    const half = @divFloor(bin_width, 2);
     for (0..half + 1) |k| {
         const re: f32 = bins[k].r;
         const im: f32 = bins[k].i;
 
         const mag = @sqrt(re * re + im * im);
         const freq = @as(f32, @floatFromInt(k)) * @as(f32, @floatFromInt(sr)) /
-            @as(f32, @floatFromInt(BIN_WIDTH));
+            @as(f32, @floatFromInt(bin_width));
 
         weighted_sum += freq * mag;
         mag_sum += mag;
     }
 
-    if (mag_sum == 0) return 0;
-    return weighted_sum / mag_sum;
+    if (mag_sum == 0) return null;
+    const res = weighted_sum / mag_sum;
+    if (res == 0) return null;
+    return res;
 }
 
 /// return in amp

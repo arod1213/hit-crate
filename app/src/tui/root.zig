@@ -12,19 +12,19 @@ pub const RenderDepth = enum { all, ui };
 pub fn render(w: *Io.Writer, app: *const App) !void {
     _ = try w.write("\x1b[2J\x1b[H");
 
-    _ = try w.print("order asc: {s} {}\n", .{
+    _ = try w.print("order: {s} {s}", .{
         @tagName(app.params.order_by),
-        app.params.order_asc,
+        if (app.params.order_asc) "asc" else "desc",
     });
+    _ = try w.write(" | ");
 
-    _ = try w.print("param {s} \n", .{
-        @tagName(app.active_param),
-    });
+    switch (app.active_param) {
+        .centroid => try w.print("centroid {f}\n", .{app.params.centroid}),
+        .width => try w.print("width {f}\n", .{app.params.width}),
+    }
 
-    _ = try w.print("centroid {f} | width {f} \n", .{
-        app.params.centroid,
-        app.params.width,
-    });
+    const div: [60]u8 = @splat('-');
+    _ = try w.print("{s}\n", .{&div});
 
     _ = try w.print("search: {s}\n", .{
         app.params.search_text,
@@ -75,54 +75,37 @@ pub fn handleSearch(alloc: Allocator, app: *App, rdr: *Io.Reader) !void {
 pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !RenderDepth {
     const key = try input.KeyCode.parse(rdr) orelse return .ui;
 
-    var depth: RenderDepth = .ui;
+    var depth: RenderDepth = .all;
     switch (key) {
         .@"1" => {
-            depth = .all;
             switch (app.active_param) {
                 .centroid => app.params.centroid.moveLeft(5),
                 .width => app.params.width.moveLeft(5),
             }
         },
         .@"2" => {
-            depth = .all;
             switch (app.active_param) {
                 .centroid => app.params.centroid.moveRight(5),
                 .width => app.params.width.moveRight(5),
             }
         },
         .@"3" => {
-            depth = .all;
             switch (app.active_param) {
                 .centroid => app.params.centroid.moveTolerance(-5),
                 .width => app.params.width.moveTolerance(-5),
             }
         },
         .@"4" => {
-            depth = .all;
             switch (app.active_param) {
                 .centroid => app.params.centroid.moveTolerance(5),
                 .width => app.params.width.moveTolerance(5),
             }
         },
-        .b => {
-            app.active_param = switch (app.active_param) {
-                .centroid => .width,
-                .width => .centroid,
-            };
-        },
-        .y => {
-            const curr = app.currFile() orelse return depth;
-            try curr.revealFile(io);
-        },
-        .back_slash => app.mode = .search,
         .o => {
-            depth = .all;
             app.params.order_asc = !app.params.order_asc;
             app.page = 0;
         },
         .m => {
-            depth = .all;
             app.params.order_by = switch (app.params.order_by) {
                 .width => .centroid,
                 .name => .width,
@@ -130,20 +113,37 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
             };
             app.page = 0;
         },
+        // UI CHANGES
+        .back_slash => {
+            depth = .ui;
+            app.mode = .search;
+        },
+        .a => {
+            depth = .ui;
+            app.active_param = switch (app.active_param) {
+                .centroid => .width,
+                .width => .centroid,
+            };
+        },
+        .y => {
+            depth = .ui;
+            const curr = app.currFile() orelse return depth;
+            try curr.revealFile(io);
+        },
         .down => {
-            if (app.next()) depth = .all;
+            if (!app.next()) depth = .ui;
         },
         .up => {
-            if (app.prev()) depth = .all;
+            if (!app.prev()) depth = .ui;
         },
         .right => {
-            depth = .all;
-            if (app.nextPage()) depth = .all;
+            if (!app.nextPage()) depth = .ui;
         },
         .left => {
-            if (app.prevPage()) depth = .all;
+            if (!app.prevPage()) depth = .ui;
         },
         .space => {
+            depth = .ui;
             const curr = app.currFile() orelse return depth;
             if (app.sound) |snd| {
                 try lib.ma.soundStop(snd);

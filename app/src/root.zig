@@ -154,16 +154,16 @@ pub const SearchParams = struct {
     width: Slider = .{
         .floor = 0,
         .ceiling = 200,
-        .slider_pos_percent = 50,
+        .slider_pos_percent = 0,
         .exp_scale = 1,
-        .tolerance_percent = 50,
+        .tolerance_percent = 100,
     },
     centroid: Slider = .{
         .floor = 0,
         .ceiling = 9_000,
-        .slider_pos_percent = 50,
+        .slider_pos_percent = 0,
         .exp_scale = 1,
-        .tolerance_percent = 50,
+        .tolerance_percent = 100,
     },
     order_by: OrderParams = .width,
     order_asc: bool = true,
@@ -171,7 +171,7 @@ pub const SearchParams = struct {
 
 pub fn querySamples(gpa: Allocator, conn: db.Connection, params: SearchParams, limit: usize, page: usize) ![]SampleEntry {
     const sql =
-        if (params.search_text.len > 0)
+        if (params.search_text.len > 2)
             try std.fmt.allocPrintSentinel(gpa,
                 \\ SELECT s.path, s.name, s.width, s.true_peak, s.rms, s.centroid
                 \\ FROM samples s
