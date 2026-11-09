@@ -12,12 +12,22 @@ pub const RenderDepth = enum { all, ui };
 pub fn render(w: *Io.Writer, app: *const App) !void {
     _ = try w.write("\x1b[2J\x1b[H");
 
-    _ = try w.print("order: {s} {}\n", .{
+    _ = try w.print("order asc: {s} {}\n", .{
         @tagName(app.params.order_by),
         app.params.order_asc,
     });
+
+    _ = try w.print("param {s} \n", .{
+        @tagName(app.active_param),
+    });
+
+    _ = try w.print("centroid {f} | width {f} \n", .{
+        app.params.centroid,
+        app.params.width,
+    });
+
     _ = try w.print("search: {s}\n", .{
-        app.params.search_name,
+        app.params.search_text,
     });
 
     for (app.samples, 0..) |sample, idx| {
@@ -67,6 +77,40 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
 
     var depth: RenderDepth = .ui;
     switch (key) {
+        .@"1" => {
+            depth = .all;
+            switch (app.active_param) {
+                .centroid => app.params.centroid.moveLeft(5),
+                .width => app.params.width.moveLeft(5),
+            }
+        },
+        .@"2" => {
+            depth = .all;
+            switch (app.active_param) {
+                .centroid => app.params.centroid.moveRight(5),
+                .width => app.params.width.moveRight(5),
+            }
+        },
+        .@"3" => {
+            depth = .all;
+            switch (app.active_param) {
+                .centroid => app.params.centroid.moveTolerance(-5),
+                .width => app.params.width.moveTolerance(-5),
+            }
+        },
+        .@"4" => {
+            depth = .all;
+            switch (app.active_param) {
+                .centroid => app.params.centroid.moveTolerance(5),
+                .width => app.params.width.moveTolerance(5),
+            }
+        },
+        .b => {
+            app.active_param = switch (app.active_param) {
+                .centroid => .width,
+                .width => .centroid,
+            };
+        },
         .y => {
             const curr = app.currFile() orelse return depth;
             try curr.revealFile(io);
@@ -103,7 +147,7 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
             const curr = app.currFile() orelse return depth;
             if (app.sound) |snd| {
                 try lib.ma.soundStop(snd);
-                lib.ma.soundClose(snd);
+                lib.ma.soundClose(alloc, snd);
             }
             const cstr: [:0]u8 = try alloc.dupeSentinel(u8, curr.fullpath, 0);
             app.sound = try lib.ma.soundNew(alloc, app.engine, cstr);

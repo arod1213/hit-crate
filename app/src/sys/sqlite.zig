@@ -8,6 +8,12 @@ const sqlite = @import("sqlite");
 pub const Connection = ?*sqlite.struct_sqlite3;
 pub const Statement = ?*sqlite.struct_sqlite3_stmt;
 
+const migration_file = @embedFile("migrations/schema.sql");
+
+pub fn migrate(conn: Connection) !void {
+    try exec(conn, migration_file);
+}
+
 pub fn connect(url: [:0]const u8, read_only: bool) !Connection {
     var db: Connection = null;
     const flag = if (read_only) sqlite.SQLITE_OPEN_READONLY else sqlite.SQLITE_OPEN_READWRITE | sqlite.SQLITE_OPEN_CREATE;

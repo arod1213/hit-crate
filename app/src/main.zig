@@ -12,6 +12,9 @@ pub fn main(init: std.process.Init) !void {
     const io = init.io;
     const alloc = init.arena.allocator();
 
+    const db_url = init.environ_map.get("DB_URL") orelse return error.MissingDB;
+    const db_url_cstr = try alloc.dupeSentinel(u8, db_url, 0);
+
     const args = try init.minimal.args.toSlice(alloc);
     if (args.len < 3) return error.MissingArgs;
     const command = std.meta.stringToEnum(cmd, args[1]) orelse return error.InvalidCommand;
@@ -19,13 +22,16 @@ pub fn main(init: std.process.Init) !void {
 
     switch (command) {
         .scan => {
-            const conn = try db.connect("test.db", false);
+            const conn = try db.connect(db_url_cstr, false);
             defer db.close(conn);
+            try db.migrate(conn);
+
             try lib.scanner.saveDir(io, path, conn);
         },
         .read => {
-            const conn = try db.connect("test.db", true);
+            const conn = try db.connect(db_url_cstr, true);
             defer db.close(conn);
+            // try db.migrate(conn);
 
             var buffer: [256]u8 = undefined;
             const stdin = Io.File.stdin();
@@ -40,10 +46,10 @@ pub fn main(init: std.process.Init) !void {
             var wrt = stdout.writer(io, &out_buffer);
 
             const engine = try lib.ma.engineNew(alloc);
-            defer lib.ma.engineClose(engine);
+            defer lib.ma.engineClose(alloc, engine);
 
-            var search = try std.ArrayList(u8).initCapacity(alloc, 10);
-            defer search.deinit(alloc);
+            var search_text = try std.ArrayList(u8).initCapacity(alloc, 10);
+            defer search_text.deinit(alloc);
 
             var app = tui.App{
                 .limit = 10,
@@ -51,15 +57,15 @@ pub fn main(init: std.process.Init) !void {
                 .idx = 0,
                 .samples = &[0]lib.SampleEntry{},
                 .engine = engine,
-                .search_text = search,
+                .search_text = search_text,
                 .params = lib.SearchParams{
-                    .search_name = "kick",
+                    .search_text = "kick",
                 },
             };
             defer {
                 if (app.sound) |snd| {
                     lib.ma.soundStop(snd) catch {};
-                    lib.ma.soundClose(snd);
+                    lib.ma.soundClose(alloc, snd);
                 }
             }
 
@@ -69,7 +75,7 @@ pub fn main(init: std.process.Init) !void {
 
             var depth: tui.RenderDepth = .all;
             while (true) {
-                app.params.search_name = app.search_text.items;
+                app.params.search_text = app.search_text.items;
                 if (depth == .all) {
                     _ = render_arena.reset(.free_all);
                     app.samples = try lib.querySamples(render_alloc, conn, app.params, app.limit, app.page);

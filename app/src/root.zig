@@ -2,6 +2,7 @@
 const std = @import("std");
 const Io = std.Io;
 const Allocator = std.mem.Allocator;
+const assert = std.debug.assert;
 
 pub const miniaudio = @import("miniaudio");
 
@@ -47,13 +48,92 @@ pub const SampleEntry = struct {
     }
 };
 
-pub fn Range(comptime T: type) type {
-    return struct {
-        target: T,
-        tolerance_upper: T,
-        tolerance_lower: T,
-    };
-}
+// TODO: make this do exponential scaling so button press moves 5% in either direction (nice UX for TUI)
+// fn Slider(comptime exp_scale: f32, lower: f32, upper: f32) type {
+//     assert(lower <= upper);
+//     return struct {
+//         curr_percent: f32 = 0.0,
+//         value: f32 = lower,
+//         diff: f32 = upper - lower,
+//
+//         const SliderSelf = @This();
+//         pub fn setPos(self: SliderSelf, percent: f32) void {
+//             assert(percent >= 0.0);
+//             assert(percent <= 100.0);
+//
+//             const scale_percent = percent * exp_scale / 100;
+//             assert(scale_percent >= 0);
+//             assert(scale_percent <= 1.0);
+//             self.value = lower + (scale_percent * self.diff);
+//             self.curr_percent = percent;
+//         }
+//     };
+// }
+//
+// const Params = struct {
+//     width: Slider(1, 0, 200) = .{},
+//     centroid: Slider(0.2, 0, 9_000) = .{},
+// };
+
+const Slider = struct {
+    floor: f32, // MIN value
+    ceiling: f32, // MAX value
+
+    exp_scale: f32, // 1 = no scaling, 0.9 slower ramping
+    tolerance_percent: f32, // 0.0 to 100.0
+
+    slider_pos_percent: f32, // 0.0 to 100.0
+
+    const Self = @This();
+    pub fn value(self: Self) f32 {
+        const diff = self.ceiling - self.floor;
+        const scaled_percent = std.math.pow(f32, self.slider_pos_percent / 100, self.exp_scale);
+        const diff_change = scaled_percent * diff;
+        return self.floor + diff_change;
+    }
+
+    pub fn bound(self: Self, lower: bool) f32 {
+        const diff = self.ceiling - self.floor;
+        const percentile = self.slider_pos_percent + if (lower)
+            -self.tolerance_percent
+        else
+            self.tolerance_percent;
+        const percentile_bounded: f32 = @max(0.0, @min(100.0, percentile)) / 100.0;
+        const scaled_percent = std.math.pow(f32, percentile_bounded, self.exp_scale);
+
+        // std.log.info("pos {d} tol {d} pct {d} bound {d} scaled {d}", .{
+        //     self.slider_pos_percent,
+        //     self.tolerance_percent,
+        //     percentile,
+        //     percentile_bounded,
+        //     scaled_percent,
+        // });
+        const diff_change = scaled_percent * diff;
+        return self.floor + diff_change;
+    }
+
+    pub fn moveTolerance(self: *Self, by: f32) void {
+        const val = self.tolerance_percent + by;
+        self.tolerance_percent = @max(0.0, @min(100.0, val));
+    }
+
+    pub fn moveRight(self: *Self, percent: f32) void {
+        const val = self.slider_pos_percent + percent;
+        self.slider_pos_percent = @min(100.0, val);
+    }
+
+    pub fn moveLeft(self: *Self, percent: f32) void {
+        const val = self.slider_pos_percent - percent;
+        self.slider_pos_percent = @max(0, val);
+    }
+
+    pub fn format(self: Self, w: *Io.Writer) !void {
+        _ = try w.print("{d} - {d}", .{
+            self.bound(true),
+            self.bound(false),
+        });
+    }
+};
 
 pub const OrderParams = enum {
     centroid,
@@ -70,48 +150,58 @@ pub const OrderParams = enum {
     }
 };
 pub const SearchParams = struct {
-    search_name: []const u8,
-    width: Range(f32) = .{ .target = 100, .tolerance_lower = 100, .tolerance_upper = 100 },
-    centroid: Range(f32) = .{ .target = 50, .tolerance_lower = 0, .tolerance_upper = 5_000 },
+    search_text: []const u8,
+    width: Slider = .{
+        .floor = 0,
+        .ceiling = 200,
+        .slider_pos_percent = 50,
+        .exp_scale = 1,
+        .tolerance_percent = 50,
+    },
+    centroid: Slider = .{
+        .floor = 0,
+        .ceiling = 9_000,
+        .slider_pos_percent = 50,
+        .exp_scale = 1,
+        .tolerance_percent = 50,
+    },
     order_by: OrderParams = .width,
     order_asc: bool = true,
 };
 
 pub fn querySamples(gpa: Allocator, conn: db.Connection, params: SearchParams, limit: usize, page: usize) ![]SampleEntry {
     const sql =
-        if (params.search_name.len > 0)
+        if (params.search_text.len > 0)
             try std.fmt.allocPrintSentinel(gpa,
                 \\ SELECT s.path, s.name, s.width, s.true_peak, s.rms, s.centroid
                 \\ FROM samples s
                 \\ JOIN samples_fts f on f.rowid = s.rowid
                 \\ WHERE f.name MATCH ?1 || '*'
-                \\ AND s.width BETWEEN (?2 - ?3) and (?2 + ?4)
-                \\ AND s.centroid BETWEEN (?5 - ?6) and (?5 + ?7)
+                \\ AND s.width BETWEEN ?2 and ?3
+                \\ AND s.centroid BETWEEN ?4 and ?5
                 \\ {s}
-                \\ LIMIT ?8 OFFSET ?9
+                \\ LIMIT ?6 OFFSET ?7
             , .{params.order_by.asClause(params.order_asc)}, 0)
         else
             try std.fmt.allocPrintSentinel(gpa,
                 \\ SELECT s.path, s.name, s.width, s.true_peak, s.rms, s.centroid
                 \\ FROM samples s
                 \\ WHERE ?1 IS NULL
-                \\ AND s.width BETWEEN (?2 - ?3) and (?2 + ?4)
-                \\ AND s.centroid BETWEEN (?5 - ?6) and (?5 + ?7)
+                \\ AND s.width BETWEEN ?2 and ?3
+                \\ AND s.centroid BETWEEN ?4 and ?5
                 \\ {s}
-                \\ LIMIT ?8 OFFSET ?9
+                \\ LIMIT ?6 OFFSET ?7
             , .{params.order_by.asClause(params.order_asc)}, 0);
     defer gpa.free(sql);
 
     const stmt = try db.prepare(conn, sql);
     defer db.stmtClose(stmt) catch {};
     try db.stmtBindMany(stmt, .{
-        if (params.search_name.len == 0) null else params.search_name,
-        params.width.target,
-        params.width.tolerance_lower,
-        params.width.tolerance_upper,
-        params.centroid.target,
-        params.centroid.tolerance_lower,
-        params.centroid.tolerance_upper,
+        if (params.search_text.len == 0) null else params.search_text,
+        params.width.bound(true),
+        params.width.bound(false),
+        params.centroid.bound(true),
+        params.centroid.bound(false),
         limit,
         page * limit,
     });

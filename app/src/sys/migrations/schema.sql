@@ -1,4 +1,4 @@
-CREATE TABLE samples (
+CREATE TABLE IF NOT EXISTS samples (
   path TEXT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,
   ext TEXT,
@@ -10,6 +10,10 @@ CREATE TABLE samples (
   duration_ms INTEGER NOT NULL
 );
 
+CREATE INDEX IF NOT EXISTS idx_samples_width    ON samples(width, centroid);
+CREATE INDEX IF NOT EXISTS idx_samples_centroid ON samples(centroid, width);
+CREATE INDEX IF NOT EXISTS idx_samples_name     ON samples(name);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS samples_fts USING fts5(
   name,
   content=samples,
@@ -17,8 +21,10 @@ CREATE VIRTUAL TABLE IF NOT EXISTS samples_fts USING fts5(
   tokenize='trigram'
 );
 
-INSERT INTO samples_fts(rowid, name)
-  SELECT path, name FROM samples;
+-- INSERT INTO samples_fts(rowid, name)
+--   SELECT path, name FROM samples 
+-- ON CONFLICT DO NOTHING;
+INSERT INTO samples_fts(samples_fts) VALUES('rebuild');
 
 CREATE TRIGGER IF NOT EXISTS samples_fts_insert AFTER INSERT ON samples BEGIN
 INSERT INTO samples_fts(rowid, name) VALUES (new.rowid, new.name);

@@ -72,20 +72,23 @@ pub const Decoder = struct {
 
 pub fn engineNew(alloc: Allocator) !*ma.ma_engine {
     const engine = try alloc.create(ma.ma_engine);
+    errdefer alloc.destroy(engine);
     const res = ma.ma_engine_init(null, engine);
     if (res != ma.MA_SUCCESS) return error.NoOpen;
     return engine;
 }
 
-pub fn engineClose(engine: [*c]ma.ma_engine) void {
-    if (engine == null) return;
-    engine.*.uninit();
+pub fn engineClose(alloc: Allocator, engine: *ma.ma_engine) void {
+    engine.uninit();
+    alloc.destroy(engine);
 }
 
 pub fn soundNew(alloc: Allocator, engine: [*c]ma.ma_engine, path: [:0]const u8) !*ma.ma_sound {
     assert(engine != null);
 
     const sound = try alloc.create(ma.ma_sound);
+    errdefer alloc.destroy(sound);
+
     const res = engine.*.ma_sound_init_from_file(
         path,
         ma.MA_SOUND_FLAG_STREAM,
@@ -118,7 +121,7 @@ pub fn soundStop(sound: [*c]ma.ma_sound) !void {
     if (res != ma.MA_SUCCESS) return error.NoStop;
 }
 
-pub fn soundClose(sound: [*c]ma.ma_sound) void {
-    if (sound == null) return;
-    sound.*.uninit();
+pub fn soundClose(alloc: Allocator, sound: *ma.ma_sound) void {
+    sound.uninit();
+    alloc.destroy(sound);
 }

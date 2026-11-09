@@ -1,21 +1,25 @@
 const std = @import("std");
 const Io = std.Io;
 const Allocator = std.mem.Allocator;
+const assert = std.debug.assert;
 
 const lib = @import("lib");
 const miniaudio = lib.miniaudio;
 
 const Mode = enum { search, explore };
+const ActiveParam = enum { centroid, width };
 
 idx: usize,
 mode: Mode = .explore,
+active_param: ActiveParam = .centroid,
+search_text: std.ArrayList(u8),
+params: lib.SearchParams,
+
 engine: [*c]miniaudio.ma_engine,
 sound: ?[*c]miniaudio.ma_sound = null,
 samples: []lib.SampleEntry,
-search_text: std.ArrayList(u8),
 
 target_lufs: f32 = -17.0,
-params: lib.SearchParams,
 limit: usize,
 page: usize,
 
