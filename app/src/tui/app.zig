@@ -4,10 +4,9 @@ const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 
 const lib = @import("lib");
-const miniaudio = lib.miniaudio;
 
 const Mode = enum { search, explore };
-const ActiveParam = enum { centroid, width };
+const ActiveParam = enum { centroid, width, pitch };
 
 idx: usize,
 mode: Mode = .explore,
@@ -15,15 +14,24 @@ active_param: ActiveParam = .centroid,
 search_text: std.ArrayList(u8),
 params: lib.SearchParams,
 
-engine: [*c]miniaudio.ma_engine,
-sound: ?[*c]miniaudio.ma_sound = null,
+engine: lib.ma.Engine,
+sound: ?lib.ma.Sound = null,
 samples: []lib.SampleEntry,
 
+pitch_semitones: f32 = 0.0,
 target_lufs: f32 = -17.0,
 limit: usize,
 page: usize,
 
 const Self = @This();
+
+pub fn setPitch(self: *Self, semitones: f32) void {
+    const max_pitch = @max(-12, @min(12, semitones));
+    self.pitch_semitones = max_pitch;
+    if (self.sound != null) {
+        self.sound.?.setPitch(semitones);
+    }
+}
 
 pub fn nextPage(self: *Self) bool {
     if (self.samples.len == 0 or self.samples.len < self.limit) return false;

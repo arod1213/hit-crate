@@ -100,7 +100,12 @@ pub const AudioMeta = struct {
         };
 
         const rms = ampToDb(f32, rmsAmp(all_frames.items));
-        const centroid = spectralCentroid(gpa, all_frames.items, decoder.sr, decoder.out_ch) catch null;
+
+        const BIN_WIDTH = 1024;
+        const mono_frames = try framesToMono(gpa, BIN_WIDTH, all_frames.items, decoder.sr, decoder.out_ch);
+        defer gpa.free(mono_frames);
+        const centroid = spectralCentroid(gpa, BIN_WIDTH, mono_frames, decoder.sr) catch null;
+
         const lufs = blk: {
             var loudness_lufs: f64 = 0.0;
             if (eb.ebur128_loudness_global(eb_state, &loudness_lufs) != eb.EBUR128_SUCCESS) {
@@ -119,17 +124,16 @@ pub const AudioMeta = struct {
     }
 };
 
-pub fn spectralCentroid(gpa: Allocator, frames: []const f32, sr: usize, ch: usize) !f32 {
+fn framesToMono(gpa: Allocator, comptime bin_width: usize, frames: []const f32, sr: usize, ch: usize) ![]f32 {
     assert(ch != 0);
     assert(sr != 0);
 
     const num_frames = @divFloor(frames.len, ch);
     if (num_frames == 0) return error.NoFrames;
-    const BIN_WIDTH = 1024;
-    if (num_frames < BIN_WIDTH) return error.NotEnoughFrames;
+    if (num_frames < bin_width) return error.NotEnoughFrames;
 
-    var mono_frames = try gpa.alloc(kfft.kiss_fft_cpx, num_frames);
-    defer gpa.free(mono_frames);
+    var mono_frames = try gpa.alloc(f32, num_frames);
+    errdefer gpa.free(mono_frames);
 
     // collapse to mono
     var i: usize = 0;
@@ -139,26 +143,38 @@ pub fn spectralCentroid(gpa: Allocator, frames: []const f32, sr: usize, ch: usiz
         var sum: f32 = 0;
         for (set) |s| sum += s;
         const mono = sum / @as(f32, @floatFromInt(ch));
-        mono_frames[i] = .{ .r = mono, .i = 0 };
+        mono_frames[i] = mono;
         i += 1;
     }
+    return mono_frames;
+}
 
-    assert(num_frames <= mono_frames.len);
-    var bins = std.mem.zeroes([BIN_WIDTH]kfft.kiss_fft_cpx);
+pub fn spectralCentroid(gpa: Allocator, comptime bin_width: usize, mono_frames: []const f32, sr: usize) !f32 {
+    assert(sr != 0);
 
-    // TODO: step through all samples here so better reading
+    var hann: [bin_width]f32 = undefined;
+    for (&hann, 0..) |*w, n| {
+        const x = @as(f32, @floatFromInt(n)) / @as(f32, @floatFromInt(bin_width - 1));
+        w.* = 0.5 - 0.5 * @cos(2.0 * std.math.pi * x);
+    }
 
-    const cfg = kfft.kiss_fft_alloc(BIN_WIDTH, 0, null, 0) orelse {
+    var bins = std.mem.zeroes([bin_width]kfft.kiss_fft_cpx);
+    const cfg = kfft.kiss_fft_alloc(bin_width, 0, null, 0) orelse {
         return error.FFTAllocFailed;
     };
     defer kfft.kiss_fft_free(cfg);
 
-    var centroids = try std.ArrayList(f32).initCapacity(gpa, 50);
+    var centroids = try std.ArrayList(f32).initCapacity(gpa, 400);
     defer centroids.deinit(gpa);
 
-    var mono_window = std.mem.window(kfft.kiss_fft_cpx, mono_frames, BIN_WIDTH, @divFloor(BIN_WIDTH, 2));
-    while (mono_window.next()) |set| {
-        const centroid = centroidFromFrames(cfg, BIN_WIDTH, &bins, set, sr) orelse continue;
+    var hann_window: [bin_width]kfft.kiss_fft_cpx = undefined; // hann window applied
+    var mono_frames_window = std.mem.window(f32, mono_frames, bin_width, @divFloor(bin_width, 2));
+    while (mono_frames_window.next()) |set| {
+        if (set.len < bin_width) break;
+        for (set, hann, &hann_window) |s, w, *out| {
+            out.* = .{ .r = s * w, .i = 0 };
+        }
+        const centroid = centroidFromFrames(cfg, bin_width, &bins, &hann_window, sr) orelse continue;
         try centroids.append(gpa, centroid);
     }
 
@@ -168,7 +184,7 @@ pub fn spectralCentroid(gpa: Allocator, frames: []const f32, sr: usize, ch: usiz
     return sum / @as(f32, @floatFromInt(centroids.items.len));
 }
 
-fn centroidFromFrames(cfg: *kfft.struct_kiss_fft_state, bin_width: usize, bins: []kfft.kiss_fft_cpx, frames: []const kfft.kiss_fft_cpx, sr: usize) ?f32 {
+fn centroidFromFrames(cfg: *kfft.struct_kiss_fft_state, comptime bin_width: usize, bins: []kfft.kiss_fft_cpx, frames: []const kfft.kiss_fft_cpx, sr: usize) ?f32 {
     kfft.kiss_fft(cfg, @ptrCast(frames), bins[0..].ptr);
     var weighted_sum: f32 = 0;
     var mag_sum: f32 = 0;
@@ -187,6 +203,7 @@ fn centroidFromFrames(cfg: *kfft.struct_kiss_fft_state, bin_width: usize, bins: 
     }
 
     if (mag_sum == 0) return null;
+    if (mag_sum < 1e-6) return null; // -60dBFS
     const res = weighted_sum / mag_sum;
     if (res == 0) return null;
     return res;

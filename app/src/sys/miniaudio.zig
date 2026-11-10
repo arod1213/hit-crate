@@ -70,58 +70,83 @@ pub const Decoder = struct {
     }
 };
 
-pub fn engineNew(alloc: Allocator) !*ma.ma_engine {
-    const engine = try alloc.create(ma.ma_engine);
-    errdefer alloc.destroy(engine);
-    const res = ma.ma_engine_init(null, engine);
-    if (res != ma.MA_SUCCESS) return error.NoOpen;
-    return engine;
-}
+pub const Engine = struct {
+    ptr: *ma.ma_engine,
 
-pub fn engineClose(alloc: Allocator, engine: *ma.ma_engine) void {
-    engine.uninit();
-    alloc.destroy(engine);
-}
+    const Self = @This();
 
-pub fn soundNew(alloc: Allocator, engine: [*c]ma.ma_engine, path: [:0]const u8) !*ma.ma_sound {
-    assert(engine != null);
-
-    const sound = try alloc.create(ma.ma_sound);
-    errdefer alloc.destroy(sound);
-
-    const res = engine.*.ma_sound_init_from_file(
-        path,
-        ma.MA_SOUND_FLAG_STREAM,
-        null,
-        null,
-        sound,
-    );
-    if (res != ma.MA_SUCCESS) {
-        std.log.err("failed {d}: {s}", .{ res, path });
-        return error.NoOpen;
+    pub fn init(alloc: Allocator) !Self {
+        const engine = try alloc.create(ma.ma_engine);
+        errdefer alloc.destroy(engine);
+        const res = ma.ma_engine_init(null, engine);
+        if (res != ma.MA_SUCCESS) return error.NoOpen;
+        return .{ .ptr = engine };
     }
-    return sound;
-}
 
-pub fn soundPlay(sound: [*c]ma.ma_sound) !void {
-    if (sound == null) return error.NoSound;
-    const res = sound.*.start();
-    if (res != ma.MA_SUCCESS) return error.NoPlay;
-}
+    pub fn deinit(self: Self, alloc: Allocator) void {
+        self.ptr.uninit();
+        alloc.destroy(self.ptr);
+    }
+};
 
-pub fn isPlaying(sound: [*c]ma.ma_sound) bool {
-    if (sound == null) return false;
-    const res = sound.*.is_playing();
-    return res == ma.MA_TRUE;
-}
+pub const Sound = struct {
+    ptr: *ma.ma_sound,
 
-pub fn soundStop(sound: [*c]ma.ma_sound) !void {
-    if (sound == null) return;
-    const res = sound.*.stop();
-    if (res != ma.MA_SUCCESS) return error.NoStop;
-}
+    const Self = @This();
 
-pub fn soundClose(alloc: Allocator, sound: *ma.ma_sound) void {
-    sound.uninit();
-    alloc.destroy(sound);
-}
+    pub fn init(alloc: Allocator, engine: [*c]ma.ma_engine, path: [:0]const u8) !Self {
+        assert(engine != null);
+
+        const sound = try alloc.create(ma.ma_sound);
+        errdefer alloc.destroy(sound);
+
+        const res = engine.*.ma_sound_init_from_file(
+            path,
+            ma.MA_SOUND_FLAG_STREAM,
+            null,
+            null,
+            sound,
+        );
+        if (res != ma.MA_SUCCESS) {
+            std.log.err("failed {d}: {s}", .{ res, path });
+            return error.NoOpen;
+        }
+        return .{
+            .ptr = sound,
+        };
+    }
+
+    pub fn setGain(self: Self, amp: f32) void {
+        self.ptr.set_volume(amp);
+    }
+
+    pub fn setPitch(self: Self, semitones: f32) void {
+        const max_pitch = @max(-12, @min(12, semitones));
+        const float_mult = std.math.pow(f32, 2.0, max_pitch / 12.0);
+        self.ptr.set_pitch(float_mult);
+    }
+
+    pub fn play(self: Self, pitch_semitones: f32) !void {
+        if (pitch_semitones != 0) {
+            self.setPitch(pitch_semitones);
+        }
+        const res = self.ptr.start();
+        if (res != ma.MA_SUCCESS) return error.NoPlay;
+    }
+
+    pub fn isPlaying(self: Self) bool {
+        const res = self.ptr.is_playing();
+        return res == ma.MA_TRUE;
+    }
+
+    pub fn stop(self: Self) !void {
+        const res = self.ptr.stop();
+        if (res != ma.MA_SUCCESS) return error.NoStop;
+    }
+
+    pub fn deinit(self: Self, alloc: Allocator) void {
+        self.stop() catch {};
+        self.ptr.uninit();
+        alloc.destroy(self.ptr);
+    }
+};

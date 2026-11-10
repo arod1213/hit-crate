@@ -6,14 +6,50 @@ const lib = @import("zigs");
 const db = lib.db;
 const tui = @import("tui");
 
-const cmd = enum { scan, read };
+const cmd = enum { scan, read, reset };
+
+const Config = struct {
+    db_url: []const u8,
+    lock_file: []const u8,
+
+    const Self = @This();
+
+    fn docFolder(io: Io, arena: Allocator, ENV: *const std.process.Environ.Map) ![]const u8 {
+        const home = ENV.get("HOME") orelse return error.NoDbPath;
+        const doc_folder = try std.fs.path.join(arena, &[_][]const u8{ home, "Documents", "HitCrate" });
+        Io.Dir.createDirAbsolute(io, doc_folder, .default_dir) catch |e| switch (e) {
+            Io.Dir.CreateDirError.PathAlreadyExists => {},
+            else => return e,
+        };
+        return doc_folder;
+    }
+
+    fn db(arena: Allocator, ENV: *const std.process.Environ.Map, doc_folder: []const u8) ![]const u8 {
+        if (ENV.get("HIT_CRATE_DB")) |x| {
+            if (x.len > 0) return x;
+        }
+        return try std.fs.path.join(arena, &[_][]const u8{ doc_folder, "hitcrate.db" });
+    }
+    pub fn fromEnv(io: Io, arena: Allocator, ENV: *const std.process.Environ.Map) !Self {
+        const doc_folder = try docFolder(io, arena, ENV);
+
+        const lock_path = try std.fs.path.join(arena, &[_][]const u8{ doc_folder, "scan.lock" });
+        var file = try Io.Dir.createFileAbsolute(io, lock_path, .{}); // ensure lock file created
+        defer file.close(io);
+
+        return .{
+            .db_url = try Self.db(arena, ENV, doc_folder),
+            .lock_file = lock_path,
+        };
+    }
+};
 
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
     const alloc = init.arena.allocator();
 
-    const db_url = init.environ_map.get("HIT_CRATE_DB") orelse return error.MissingDB;
-    const db_url_cstr = try alloc.dupeSentinel(u8, db_url, 0);
+    const cfg = try Config.fromEnv(io, alloc, init.environ_map);
+    const db_url_cstr = try alloc.dupeSentinel(u8, cfg.db_url, 0);
 
     const args = try init.minimal.args.toSlice(alloc);
     if (args.len < 3) return error.MissingArgs;
@@ -21,7 +57,22 @@ pub fn main(init: std.process.Init) !void {
     const path = args[2];
 
     switch (command) {
+        .reset => {
+            const conn = try db.connect(db_url_cstr, false);
+            defer db.close(conn);
+            try db.exec(conn, "DELETE FROM samples");
+            try db.exec(conn, "VACUUM");
+        },
         .scan => {
+            var file = Io.Dir.openFileAbsolute(io, cfg.lock_file, .{ .lock = .exclusive }) catch |e| {
+                std.log.err("failed to acquire lock {}", .{e});
+                return e;
+            };
+            defer {
+                file.unlock(io);
+                file.close(io);
+            }
+
             const conn = try db.connect(db_url_cstr, false);
             defer db.close(conn);
             try db.migrate(conn);
@@ -31,7 +82,6 @@ pub fn main(init: std.process.Init) !void {
         .read => {
             const conn = try db.connect(db_url_cstr, true);
             defer db.close(conn);
-            // try db.migrate(conn);
 
             var buffer: [256]u8 = undefined;
             const stdin = Io.File.stdin();
@@ -45,8 +95,8 @@ pub fn main(init: std.process.Init) !void {
             const stdout = Io.File.stdout();
             var wrt = stdout.writer(io, &out_buffer);
 
-            const engine = try lib.ma.engineNew(alloc);
-            defer lib.ma.engineClose(alloc, engine);
+            const engine = try lib.ma.Engine.init(alloc);
+            defer engine.deinit(alloc);
 
             var search_text = try std.ArrayList(u8).initCapacity(alloc, 10);
             defer search_text.deinit(alloc);
@@ -64,8 +114,7 @@ pub fn main(init: std.process.Init) !void {
             };
             defer {
                 if (app.sound) |snd| {
-                    lib.ma.soundStop(snd) catch {};
-                    lib.ma.soundClose(alloc, snd);
+                    snd.deinit(alloc);
                 }
             }
 

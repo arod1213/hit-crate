@@ -25,9 +25,29 @@ pub fn render(w: *Io.Writer, app: *const App) !void {
     _ = try w.write(dim ++ " | " ++ reset);
 
     switch (app.active_param) {
-        .centroid => try w.print(dim ++ "centroid " ++ reset ++ blue ++ "{f}" ++ reset ++ "\n", .{app.params.centroid}),
-        .width => try w.print(dim ++ "width " ++ reset ++ blue ++ "{f}" ++ reset ++ "\n", .{app.params.width}),
+        .pitch => {
+            try w.print(dim ++ "centroid " ++ reset ++ blue ++ "{f}" ++ reset, .{app.params.centroid});
+            _ = try w.write(dim ++ " | " ++ reset);
+            try w.print(dim ++ "width " ++ reset ++ blue ++ "{f}" ++ reset, .{app.params.width});
+            _ = try w.write(dim ++ " | " ++ reset);
+            try w.print(dim ++ "pitch " ++ reset ++ yellow ++ "{d}" ++ reset, .{app.pitch_semitones});
+        },
+        .centroid => {
+            try w.print(dim ++ "centroid " ++ reset ++ yellow ++ "{f}" ++ reset, .{app.params.centroid});
+            _ = try w.write(dim ++ " | " ++ reset);
+            try w.print(dim ++ "width " ++ reset ++ blue ++ "{f}" ++ reset, .{app.params.width});
+            _ = try w.write(dim ++ " | " ++ reset);
+            try w.print(dim ++ "pitch " ++ reset ++ blue ++ "{d}" ++ reset, .{app.pitch_semitones});
+        },
+        .width => {
+            try w.print(dim ++ "centroid " ++ reset ++ blue ++ "{f}" ++ reset, .{app.params.centroid});
+            _ = try w.write(dim ++ " | " ++ reset);
+            try w.print(dim ++ "width " ++ reset ++ yellow ++ "{f}" ++ reset, .{app.params.width});
+            _ = try w.write(dim ++ " | " ++ reset);
+            try w.print(dim ++ "pitch " ++ reset ++ blue ++ "{d}" ++ reset, .{app.pitch_semitones});
+        },
     }
+    _ = try w.write("\n");
 
     const div: [60]u8 = @splat('-');
     _ = try w.print(dim ++ "{s}" ++ reset ++ "\n", .{&div});
@@ -38,7 +58,7 @@ pub fn render(w: *Io.Writer, app: *const App) !void {
 
     for (app.samples, 0..) |sample, idx| {
         if (idx == app.idx) {
-            try w.print(green ++ "> {s}" ++ reset ++ dim ++ " (c: {d} w: {d} p: {d})" ++ reset ++ "\n", .{
+            try w.print(green ++ "> {s}" ++ reset ++ dim ++ " (c: {d:>5.1} w: {d:>3.1} p: {d:>3.2})" ++ reset ++ "\n", .{
                 sample.basename,
                 sample.centroid orelse 0,
                 sample.width,
@@ -87,24 +107,28 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
             switch (app.active_param) {
                 .centroid => app.params.centroid.moveLeft(5),
                 .width => app.params.width.moveLeft(5),
+                .pitch => app.setPitch(app.pitch_semitones - 1),
             }
         },
         .@"2" => {
             switch (app.active_param) {
                 .centroid => app.params.centroid.moveRight(5),
                 .width => app.params.width.moveRight(5),
+                .pitch => app.setPitch(app.pitch_semitones + 1),
             }
         },
         .@"3" => {
             switch (app.active_param) {
                 .centroid => app.params.centroid.moveTolerance(-5),
                 .width => app.params.width.moveTolerance(-5),
+                .pitch => {},
             }
         },
         .@"4" => {
             switch (app.active_param) {
                 .centroid => app.params.centroid.moveTolerance(5),
                 .width => app.params.width.moveTolerance(5),
+                .pitch => {},
             }
         },
         // toggle order direction
@@ -133,12 +157,25 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
                 .search_text = app.search_text.items,
             };
         },
+        // find similar
+        .s => {
+            if (app.currFile()) |curr| {
+                app.search_text.clearAndFree(alloc);
+                if (curr.centroid) |x| {
+                    app.params.centroid.setValue(x) catch {};
+                    app.params.centroid.tolerance_percent = 2;
+                }
+                app.params.width.setValue(curr.width) catch {};
+                app.params.width.tolerance_percent = 2;
+            }
+        },
         // toggle active
         .a => {
             depth = .ui;
             app.active_param = switch (app.active_param) {
                 .centroid => .width,
-                .width => .centroid,
+                .width => .pitch,
+                .pitch => .centroid,
             };
         },
         // open selected
@@ -168,16 +205,17 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
             depth = .ui;
             const curr = app.currFile() orelse return depth;
             if (app.sound) |snd| {
-                try lib.ma.soundStop(snd);
-                lib.ma.soundClose(alloc, snd);
+                snd.deinit(alloc);
             }
             const cstr: [:0]u8 = try alloc.dupeSentinel(u8, curr.fullpath, 0);
-            app.sound = try lib.ma.soundNew(alloc, app.engine, cstr);
+            app.sound = try lib.ma.Sound.init(alloc, app.engine.ptr, cstr);
 
             const new_amp = curr.ampToLufs(app.target_lufs);
 
-            app.sound.?.*.set_volume(new_amp);
-            try lib.ma.soundPlay(app.sound.?);
+            app.sound.?.setGain(new_amp);
+            app.sound.?.play(app.pitch_semitones) catch |e| {
+                std.log.err("failed to play: {}", .{e});
+            };
         },
         else => {},
     }

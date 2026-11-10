@@ -86,14 +86,23 @@ const Slider = struct {
 
     const Self = @This();
     pub fn value(self: Self) f32 {
-        const diff = self.ceiling - self.floor;
+        const range = self.ceiling - self.floor;
         const scaled_percent = std.math.pow(f32, self.slider_pos_percent / 100, self.exp_scale);
-        const diff_change = scaled_percent * diff;
+        const diff_change = scaled_percent * range;
         return self.floor + diff_change;
     }
 
+    pub fn setValue(self: *Self, x: f32) !void {
+        if (x < self.floor or x > self.ceiling) return error.OutOfBounds;
+        const range = self.ceiling - self.floor;
+        assert(range > 0);
+        const move = x - self.floor;
+        const res = std.math.pow(f32, move / range, 1.0 / self.exp_scale) * 100.0;
+        self.slider_pos_percent = res;
+    }
+
     pub fn bound(self: Self, lower: bool) f32 {
-        const diff = self.ceiling - self.floor;
+        const range = self.ceiling - self.floor;
         const percentile = self.slider_pos_percent + if (lower)
             -self.tolerance_percent
         else
@@ -108,7 +117,7 @@ const Slider = struct {
         //     percentile_bounded,
         //     scaled_percent,
         // });
-        const diff_change = scaled_percent * diff;
+        const diff_change = scaled_percent * range;
         return self.floor + diff_change;
     }
 
@@ -149,6 +158,7 @@ pub const OrderParams = enum {
         };
     }
 };
+
 pub const SearchParams = struct {
     search_text: []const u8,
     width: Slider = .{
