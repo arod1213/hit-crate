@@ -79,14 +79,17 @@ pub fn main(init: std.process.Init) !void {
 
             try lib.scanner.saveDir(io, path, conn);
         },
-        .read => try read(io, alloc, db_url_cstr),
+        .read => try read(io, alloc, db_url_cstr, true),
     }
 }
 
-fn read(io: Io, arena: Allocator, db_url: [:0]const u8) !void {
+fn read(io: Io, arena: Allocator, db_url: [:0]const u8, use_midi: bool) !void {
     const conn = try db.connect(db_url, true);
     defer db.close(conn);
 
+    ////////////////////////
+    // I/O setup
+    ////////////////////////
     var buffer: [256]u8 = undefined;
     const stdin = Io.File.stdin();
     var rdr = stdin.reader(io, &buffer);
@@ -99,6 +102,9 @@ fn read(io: Io, arena: Allocator, db_url: [:0]const u8) !void {
     const stdout = Io.File.stdout();
     var wrt = stdout.writer(io, &out_buffer);
 
+    ////////////////////////
+    // APP setup
+    ////////////////////////
     const engine = try lib.ma.Engine.init(arena);
     defer engine.deinit(arena);
 
@@ -118,28 +124,40 @@ fn read(io: Io, arena: Allocator, db_url: [:0]const u8) !void {
         .engine = engine,
         .search_text = search_text,
         .params = lib.SearchParams{
-            .search_text = "kick",
+            .search_text = "",
         },
     };
     defer app.midi_ctx.queue.close(io);
 
-    try lib.midi.setupListener(&app.midi_ctx);
-    var fut = try io.concurrent(tui.playback.playbackQueue, .{ arena, io, &app });
+    ////////////////////////
+    // PLAYBACK
+    ////////////////////////
+    const audio_alloc = std.heap.smp_allocator;
+    if (use_midi) try lib.midi.setupListener(&app.midi_ctx);
+    var fut = try io.concurrent(tui.playback.playbackQueue, .{ audio_alloc, io, &app });
     defer fut.cancel(io);
 
-    try app.publishSelection(std.heap.smp_allocator); // init first sound (use other alloc to let other thread free it)
-
-    var render_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer render_arena.deinit();
-    const render_alloc = render_arena.allocator();
+    ////////////////////////
+    // RENDERING
+    ////////////////////////
+    var ui_arena = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
+    defer ui_arena.deinit();
+    const ui_arena_alloc = ui_arena.allocator();
 
     var depth: tui.RenderDepth = .all;
     while (true) {
         app.params.search_text = app.search_text.items;
         if (depth == .all) {
-            _ = render_arena.reset(.free_all);
-            app.samples = try lib.querySamples(render_alloc, conn, app.params, app.limit, app.page);
+            _ = ui_arena.reset(.free_all);
+            app.samples = try lib.querySamples(
+                ui_arena_alloc,
+                conn,
+                app.params,
+                app.limit,
+                app.page,
+            );
         }
+        try app.publishSelection(audio_alloc);
 
         try tui.render(&wrt.interface, &app);
         depth = try tui.handleKeys(io, arena, &app, &rdr.interface);

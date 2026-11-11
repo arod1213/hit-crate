@@ -126,6 +126,10 @@ pub const Sound = struct {
         self.ptr.set_pitch(float_mult);
     }
 
+    pub fn seek(self: Self, frame: u64) !void {
+        if (self.ptr.seek_to_pcm_frame(frame) != ma.MA_SUCCESS) return error.FailedSeek;
+    }
+
     pub fn play(self: Self, pitch_semitones: u8) !void {
         if (pitch_semitones != 0) {
             self.setPitch(pitch_semitones);

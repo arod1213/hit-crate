@@ -204,7 +204,6 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
         // play selected
         .space => {
             depth = .ui;
-            try app.publishSelection(alloc);
             try app.midi_ctx.queue.putOne(io, lib.midi.MidiEvent.noteOn(60 +| app.pitch_semitones));
         },
         else => {},

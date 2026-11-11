@@ -17,14 +17,14 @@ pub fn playbackQueue(gpa: Allocator, io: Io, app: *App) void {
             std.log.err("failed to get MIDI note {}", .{e});
             continue;
         };
-        std.log.info("checking vel {d} and note {d} event {d}", .{ event.velocity, event.note, event.event });
+        // std.log.info("checking vel {d} and note {d} event {d}", .{ event.velocity, event.note, event.event });
         if (!event.isNoteOn()) continue;
-        std.log.info("passed", .{});
+        // std.log.info("passed", .{});
 
         const pitch = event.note -| 60;
 
         if (app.pending_sound.swap(null, .acq_rel)) |p| {
-            std.log.debug("SOUND FOUND", .{});
+            // std.log.debug("SOUND FOUND", .{});
             defer {
                 gpa.free(p.path);
                 gpa.destroy(p);
@@ -33,13 +33,15 @@ pub fn playbackQueue(gpa: Allocator, io: Io, app: *App) void {
             sound = lib.ma.Sound.init(gpa, app.engine.ptr, p.path) catch null;
             // if (sound) |s| s.setGain(p.gain);
         } else {
-            std.log.debug("NO SOUND", .{});
+            // std.log.debug("NO pending sound", .{});
         }
 
         const s = sound orelse {
-            std.log.debug("NO SOUND AGAIN", .{});
+            // std.log.debug("NO SOUND AGAIN", .{});
             continue;
         };
+        // s.stop() catch continue;
+        s.seek(0) catch continue;
         s.play(pitch) catch {};
     }
 }
