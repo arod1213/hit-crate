@@ -95,10 +95,16 @@ pub const MidiEvent = struct {
     note: u8,
     velocity: u8,
 
+    pub fn channel(_: MidiEvent) u8 {
+        // TODO bitmask properly
+        return 0;
+    }
+
     pub fn isNoteOn(self: MidiEvent) bool {
         return (self.event & 0xF0) == 0x90 and self.velocity > 0;
     }
 
+    // TODO: add channel param here
     pub fn noteOn(note: u8) MidiEvent {
         return .{
             .event = 0x9A,

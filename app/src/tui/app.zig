@@ -5,20 +5,29 @@ const assert = std.debug.assert;
 
 const lib = @import("lib");
 
-const Mode = enum { search, explore };
+const Mode = enum {
+    search, // create search text
+    explore, // look through list of samples
+    push, // push selected sample to sequencer
+};
 const ActiveParam = enum { centroid, width, pitch };
+
+pub const NUM_VOICES = 4;
+
+mu: Io.Mutex = .init,
+engine: lib.ma.Engine,
+// used to render list of matching samples
+samples: []lib.SampleEntry,
+// used for drum kit playback
+sequencer_samples: [NUM_VOICES]?lib.SampleEntry = std.mem.zeroes([NUM_VOICES]?lib.SampleEntry),
+
+search_text: std.ArrayList(u8),
+midi_ctx: lib.midi.MidiCtx,
+params: lib.SearchParams,
 
 idx: usize,
 mode: Mode = .explore,
 active_param: ActiveParam = .centroid,
-search_text: std.ArrayList(u8),
-params: lib.SearchParams,
-
-mu: Io.Mutex = .init,
-engine: lib.ma.Engine,
-samples: []lib.SampleEntry,
-midi_ctx: lib.midi.MidiCtx,
-
 pitch_semitones: i32 = 0,
 target_lufs: f32 = -17.0,
 limit: usize,

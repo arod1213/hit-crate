@@ -25,15 +25,16 @@ pub fn listen(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader, cmd_queue: *sy
     }
 }
 
-fn handleKey(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader, cmd_queue: *sync.CommandQueue) !void {
+fn handleKey(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader, cmd_queue: *sync.CommandQueue) !void {
     const cmd_type = switch (app.mode) {
-        .explore => try handleExplore(io, alloc, app, rdr),
-        .search => try handleSearch(io, alloc, app, rdr),
+        .explore => try handleExplore(io, gpa, app, rdr),
+        .search => try handleSearch(io, gpa, app, rdr),
+        .push => try handlePush(io, gpa, app, rdr),
     };
     try cmd_queue.putOne(io, cmd_type);
 }
 
-fn handleSearch(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
+fn handleSearch(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
     const b = try rdr.takeByte();
 
     try app.mu.lock(io);
@@ -49,13 +50,51 @@ fn handleSearch(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !CommandTy
             app.idx = 0;
         },
         else => {
-            try app.search_text.append(alloc, b);
+            try app.search_text.append(gpa, b);
             app.page = 0;
             app.idx = 0;
         },
     }
     app.params.search_text = app.search_text.items;
     return .fetch;
+}
+
+/// TODO: this curr value will be freed so needs a new alloc or to be copied
+fn handlePush(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
+    try app.mu.lock(io);
+    defer app.mu.unlock(io);
+    defer app.mode = .explore; // leave mode
+
+    const key = try input.KeyCode.parse(rdr) orelse return .no_op;
+    const curr = app.currFile() orelse return .no_op;
+
+    const idx: u8 = switch (key) {
+        .@"1" => 0,
+        .@"2" => 1,
+        .@"3" => 2,
+        .@"4" => 3,
+        else => return .key,
+    };
+    assert(idx < App.NUM_VOICES);
+
+    if (app.sequencer_samples[idx]) |sample| {
+        sample.deinitOwned(gpa);
+    }
+
+    const basename = try gpa.dupe(u8, curr.basename);
+    errdefer gpa.free(basename);
+    const fullpath = try gpa.dupe(u8, curr.fullpath);
+    errdefer gpa.free(fullpath);
+    app.sequencer_samples[idx] = .{
+        .fullpath = fullpath,
+        .basename = basename,
+        .true_peak = curr.true_peak,
+        .lufs = curr.lufs,
+        .rms = curr.rms,
+        .width = curr.width,
+        .centroid = curr.centroid,
+    };
+    return .key;
 }
 
 fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
@@ -116,6 +155,9 @@ fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !CommandT
         // UI CHANGES
         .back_slash => {
             app.mode = .search;
+        },
+        .p => {
+            app.mode = .push;
         },
         // reset
         .r => {

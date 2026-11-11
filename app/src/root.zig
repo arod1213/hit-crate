@@ -23,6 +23,11 @@ pub const SampleEntry = struct {
     centroid: ?f32,
 
     const Self = @This();
+    pub fn deinitOwned(self: Self, gpa: Allocator) void {
+        gpa.free(self.basename);
+        gpa.free(self.fullpath);
+    }
+
     pub fn ampToLufs(self: Self, target_lufs: f32) f32 {
         const rms_amp =
             audio.ampToTarget(f32, self.rms, target_lufs);

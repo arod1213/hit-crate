@@ -112,21 +112,21 @@ pub fn main(init: std.process.Init) !void {
             var out_buffer: [256]u8 = undefined;
             const stdout = Io.File.stdout();
             var wrt = stdout.writer(io, &out_buffer);
-            try read(io, alloc, conn, &rdr.interface, &wrt.interface, use_midi);
+            try read(io, init.gpa, conn, &rdr.interface, &wrt.interface, use_midi);
         },
     }
 }
 
-fn read(io: Io, arena: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *Io.Writer, use_midi: bool) !void {
-    const engine = try lib.ma.Engine.init(arena);
-    defer engine.deinit(arena);
+fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *Io.Writer, use_midi: bool) !void {
+    const engine = try lib.ma.Engine.init(gpa);
+    defer engine.deinit(gpa);
 
-    var search_text = try std.ArrayList(u8).initCapacity(arena, 10);
-    defer search_text.deinit(arena);
+    var search_text = try std.ArrayList(u8).initCapacity(gpa, 10);
+    defer search_text.deinit(gpa);
 
     var midi_buff: [80]lib.midi.MidiEvent = undefined;
     var app = tui.App{
-        .limit = 3,
+        .limit = 10,
         .page = 0,
         .idx = 0,
         .samples = &[0]lib.SampleEntry{},
@@ -140,7 +140,14 @@ fn read(io: Io, arena: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt:
             .search_text = "",
         },
     };
-    defer app.midi_ctx.queue.close(io);
+    defer {
+        app.midi_ctx.queue.close(io);
+        for (app.sequencer_samples) |sample| {
+            if (sample) |s| {
+                s.deinitOwned(gpa);
+            }
+        }
+    }
 
     var sample_list_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer sample_list_arena.deinit();
@@ -161,7 +168,7 @@ fn read(io: Io, arena: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt:
     var fut_audio = try io.concurrent(tui.playback.listen, .{ audio_alloc, io, &app });
     defer fut_audio.cancel(io);
 
-    var fut_keys = try io.concurrent(tui.keys.listen, .{ io, arena, &app, rdr, &cmd_queue });
+    var fut_keys = try io.concurrent(tui.keys.listen, .{ io, gpa, &app, rdr, &cmd_queue });
     defer fut_keys.cancel(io);
 
     ////////////////////////

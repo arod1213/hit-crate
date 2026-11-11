@@ -71,5 +71,14 @@ pub fn render(w: *Io.Writer, app: *const App) !void {
             try w.print("  {s}\n", .{sample.basename});
         }
     }
+
+    for (app.sequencer_samples, 0..) |seq, idx| {
+        if (seq) |_| {
+            try w.print("{d}: ^^^", .{idx + 1});
+        } else {
+            try w.print("{d}: nil", .{idx + 1});
+        }
+        _ = try w.write(" | ");
+    }
     try w.flush();
 }
