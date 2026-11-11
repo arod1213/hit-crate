@@ -30,6 +30,7 @@ pub fn listen(gpa: Allocator, io: Io, app: *App) void {
             switch (e) {
                 Io.Cancelable.Canceled => return,
                 else => {
+                    std.log.err("ERR {}", .{e});
                     continue;
                 },
             }
@@ -67,9 +68,9 @@ fn renderLoop(gpa: Allocator, io: Io, app: *App, sounds: *[PLAYBACK_CHANNEL_COUN
         },
         // Sequencer playback
         else => {
-            if (event.note < ROOT_MIDI_NOTE) return;
+            if (event.note < ROOT_MIDI_NOTE) return error.NoteTooLow;
             const playback_chan = event.note - ROOT_MIDI_NOTE;
-            if (playback_chan >= PLAYBACK_CHANNEL_COUNT) return; // out of bounds
+            if (playback_chan >= PLAYBACK_CHANNEL_COUNT) return error.OutOfBounds; // out of bounds
 
             const selected_chan = &sounds[@intCast(playback_chan)];
             if (selected_chan.*) |snd| {
@@ -79,7 +80,7 @@ fn renderLoop(gpa: Allocator, io: Io, app: *App, sounds: *[PLAYBACK_CHANNEL_COUN
 
             try app.mu.lock(io);
             defer app.mu.unlock(io);
-            const sample = app.sequencerSample(@intCast(playback_chan)) orelse return;
+            const sample = app.sequencerSample(@intCast(playback_chan)) orelse return error.MissingSample;
             const amp = sample.ampToLufs(app.target_lufs);
 
             try play(gpa, app, selected_chan, sample, 0, amp);

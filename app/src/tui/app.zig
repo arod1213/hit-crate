@@ -81,6 +81,6 @@ pub fn currFile(self: Self) ?lib.SampleEntry {
 }
 
 pub fn sequencerSample(self: Self, idx: usize) ?lib.SampleEntry {
-    if (self.sequencer_samples.len >= idx) return null;
+    if (idx >= self.sequencer_samples.len) return null;
     return self.sequencer_samples[idx];
 }

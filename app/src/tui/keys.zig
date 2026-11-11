@@ -220,7 +220,8 @@ fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !CommandT
             try app.midi_ctx.queue.putOne(
                 io,
                 lib.midi.MidiEvent.noteOn(
-                    playback.SELECTED_PLAYBACK_CHAN,
+                    // playback.SELECTED_PLAYBACK_CHAN,
+                    1,
                     @intCast(midi_note),
                 ),
             );
