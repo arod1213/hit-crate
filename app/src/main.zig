@@ -6,8 +6,6 @@ const lib = @import("zigs");
 const db = lib.db;
 const tui = @import("tui");
 
-const cmd = enum { scan, read, reset };
-
 const Config = struct {
     db_url: []const u8,
     lock_file: []const u8,
@@ -30,6 +28,7 @@ const Config = struct {
         }
         return try std.fs.path.join(arena, &[_][]const u8{ doc_folder, "hitcrate.db" });
     }
+
     pub fn fromEnv(io: Io, arena: Allocator, ENV: *const std.process.Environ.Map) !Self {
         const doc_folder = try docFolder(io, arena, ENV);
 
@@ -44,6 +43,7 @@ const Config = struct {
     }
 };
 
+const cmd = enum { scan, read, reset, trigger };
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
     const alloc = init.arena.allocator();
@@ -52,11 +52,14 @@ pub fn main(init: std.process.Init) !void {
     const db_url_cstr = try alloc.dupeSentinel(u8, cfg.db_url, 0);
 
     const args = try init.minimal.args.toSlice(alloc);
-    if (args.len < 3) return error.MissingArgs;
+    if (args.len < 2) return error.MissingArgs;
     const command = std.meta.stringToEnum(cmd, args[1]) orelse return error.InvalidCommand;
-    const path = args[2];
 
     switch (command) {
+        .trigger => {
+            try lib.midi.ping(io);
+            //
+        },
         .reset => {
             const conn = try db.connect(db_url_cstr, false);
             defer db.close(conn);
@@ -64,6 +67,11 @@ pub fn main(init: std.process.Init) !void {
             try db.exec(conn, "VACUUM");
         },
         .scan => {
+            if (args.len < 3) {
+                std.log.err("please provide a folder path to scan", .{});
+                return;
+            }
+            const path = args[2];
             var file = Io.Dir.openFileAbsolute(io, cfg.lock_file, .{ .lock = .exclusive }) catch |e| {
                 std.log.err("failed to acquire lock {}", .{e});
                 return e;
@@ -79,32 +87,37 @@ pub fn main(init: std.process.Init) !void {
 
             try lib.scanner.saveDir(io, path, conn);
         },
-        .read => try read(io, alloc, db_url_cstr, true),
+        .read => {
+            var use_midi = false;
+            for (args) |arg| {
+                if (std.mem.eql(u8, arg, "-m")) {
+                    use_midi = true;
+                    break;
+                }
+            }
+
+            const conn = try db.connect(db_url_cstr, true);
+            defer db.close(conn);
+            ////////////////////////
+            // I/O setup
+            ////////////////////////
+            var buffer: [256]u8 = undefined;
+            const stdin = Io.File.stdin();
+            var rdr = stdin.reader(io, &buffer);
+
+            var term = try tui.input.Termios.init(stdin.handle);
+            try term.singleChar();
+            defer term.deinit() catch {};
+
+            var out_buffer: [256]u8 = undefined;
+            const stdout = Io.File.stdout();
+            var wrt = stdout.writer(io, &out_buffer);
+            try read(io, alloc, conn, &rdr.interface, &wrt.interface, use_midi);
+        },
     }
 }
 
-fn read(io: Io, arena: Allocator, db_url: [:0]const u8, use_midi: bool) !void {
-    const conn = try db.connect(db_url, true);
-    defer db.close(conn);
-
-    ////////////////////////
-    // I/O setup
-    ////////////////////////
-    var buffer: [256]u8 = undefined;
-    const stdin = Io.File.stdin();
-    var rdr = stdin.reader(io, &buffer);
-
-    var term = try tui.input.Termios.init(stdin.handle);
-    try term.singleChar();
-    defer term.deinit() catch {};
-
-    var out_buffer: [256]u8 = undefined;
-    const stdout = Io.File.stdout();
-    var wrt = stdout.writer(io, &out_buffer);
-
-    ////////////////////////
-    // APP setup
-    ////////////////////////
+fn read(io: Io, arena: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *Io.Writer, use_midi: bool) !void {
     const engine = try lib.ma.Engine.init(arena);
     defer engine.deinit(arena);
 
@@ -148,7 +161,7 @@ fn read(io: Io, arena: Allocator, db_url: [:0]const u8, use_midi: bool) !void {
     var fut_audio = try io.concurrent(tui.playback.listen, .{ audio_alloc, io, &app });
     defer fut_audio.cancel(io);
 
-    var fut_keys = try io.concurrent(tui.keys.listen, .{ io, arena, &app, &rdr.interface, &cmd_queue });
+    var fut_keys = try io.concurrent(tui.keys.listen, .{ io, arena, &app, rdr, &cmd_queue });
     defer fut_keys.cancel(io);
 
     ////////////////////////
@@ -157,18 +170,21 @@ fn read(io: Io, arena: Allocator, db_url: [:0]const u8, use_midi: bool) !void {
     while (true) {
         try app.mu.lock(io);
         errdefer app.mu.unlock(io);
-        try tui.render(&wrt.interface, &app);
+        try tui.render(wrt, &app);
         app.mu.unlock(io);
 
+        // only loops if no_ops are sent
         while (true) {
             const cmd_type = try cmd_queue.getOne(io);
             switch (cmd_type) {
+                .no_op => continue,
                 .key => {},
                 .fetch => {
+                    try app.mu.lock(io);
+                    defer app.mu.unlock(io);
                     _ = sample_list_arena.reset(.free_all);
                     app.samples = try lib.querySamples(sample_list_arena_alloc, conn, app.params, app.limit, app.page);
                 },
-                .no_op => continue,
             }
             break;
         }

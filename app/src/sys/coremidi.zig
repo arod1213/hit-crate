@@ -5,6 +5,48 @@ const assert = std.debug.assert;
 
 pub const midi = @import("coremidi");
 
+pub fn ping(io: Io) !void {
+    var port: midi.MIDIPortRef = undefined;
+    var client: midi.MIDIClientRef = undefined;
+
+    const client_name_cfstr = newCFString("HitCrate-Output") orelse return error.FailedString;
+    defer midi.CFRelease(client_name_cfstr);
+    const port_name_cfstr = newCFString("HitCrate-Output") orelse return error.FailedString;
+    defer midi.CFRelease(port_name_cfstr);
+
+    if (midi.MIDIClientCreate(client_name_cfstr, null, null, &client) != midi.F_OK) {
+        return error.FailedClient;
+    }
+    if (midi.MIDIOutputPortCreate(client, port_name_cfstr, &port) != midi.F_OK) {
+        return error.FailedPort;
+    }
+
+    const count = midi.MIDIGetNumberOfSources();
+    if (count == 0) {
+        std.log.debug("no MIDI sources found", .{});
+        return;
+    }
+
+    while (true) {
+        var pkts: midi.MIDIPacketList = undefined;
+        _ = midi.MIDIPacketListInit(&pkts);
+        var pkt: midi.MIDIPacket = undefined;
+        var data: [265]u8 = @splat(0);
+        data[0] = 0x9A;
+        data[1] = 60;
+        data[2] = 127;
+        _ = midi.MIDIPacketListAdd(&pkts, 1, &pkt, 0, 1, &data);
+
+        for (0..count) |id| {
+            if (midi.F_OK != midi.MIDISend(port, @intCast(id), &pkts)) {
+                return error.FailedMIDISend;
+            }
+            std.log.debug("sent {d} {d} {d}", .{ data[0], data[1], data[2] });
+        }
+        try Io.sleep(io, .fromMilliseconds(50), .awake);
+    }
+}
+
 pub fn setupListener(out_ctx: *MidiCtx) !void {
     var port: midi.MIDIPortRef = undefined;
     var client: midi.MIDIClientRef = undefined;
@@ -82,6 +124,7 @@ fn eventCallback(pkt_list: [*c]const midi.MIDIPacketList, ref_ctx: ?*anyopaque, 
     for (0..packet_len) |idx| {
         const pck = pkt_list.*.packet[idx];
         const data = pck.data;
+        std.log.debug("event {d} {d} {d}", .{ data[0], data[1], data[2] });
         ctx.queue.putOne(ctx.io, .{ .event = data[0], .note = data[1], .velocity = data[2] }) catch |e| {
             std.log.err("err {}", .{e});
         };
