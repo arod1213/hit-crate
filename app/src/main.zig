@@ -112,15 +112,6 @@ pub fn main(init: std.process.Init) !void {
             var out_buffer: [256]u8 = undefined;
             const stdout = Io.File.stdout();
             var wrt = stdout.writer(io, &out_buffer);
-            // var dbg = std.heap.DebugAllocator(.{ .verbose_log = true }).init;
-            // defer {
-            //     const leak_count = dbg.detectLeaks();
-            //     std.log.debug("found {d} leaks", .{leak_count});
-            //     const res = dbg.deinit();
-            //     if (res == .leak) {
-            //         @panic("LEAKED");
-            //     }
-            // }
             try read(io, init.gpa, conn, &rdr.interface, &wrt.interface, use_midi);
         },
     }
@@ -173,8 +164,7 @@ fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *
     var cmd_queue = tui.sync.CommandQueue.init(&cmd_buffer);
     defer cmd_queue.close(io);
 
-    const audio_alloc = std.heap.smp_allocator;
-    var fut_audio = try io.concurrent(tui.playback.listen, .{ audio_alloc, io, &app });
+    var fut_audio = try io.concurrent(tui.playback.listen, .{ gpa, io, &app });
     defer fut_audio.cancel(io);
 
     var fut_keys = try io.concurrent(tui.keys.listen, .{ io, gpa, &app, rdr, &cmd_queue });

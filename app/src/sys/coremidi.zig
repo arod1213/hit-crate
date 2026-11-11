@@ -105,7 +105,7 @@ pub const MidiEvent = struct {
     }
 
     // TODO: add channel param here
-    pub fn noteOn(note: u8) MidiEvent {
+    pub fn noteOn(_: u8, note: u8) MidiEvent {
         return .{
             .event = 0x9A,
             .note = note,

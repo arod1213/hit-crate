@@ -217,7 +217,13 @@ fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !CommandT
             assert(midi_note >= 0);
             assert(midi_note <= std.math.maxInt(u8));
 
-            try app.midi_ctx.queue.putOne(io, lib.midi.MidiEvent.noteOn(@intCast(midi_note)));
+            try app.midi_ctx.queue.putOne(
+                io,
+                lib.midi.MidiEvent.noteOn(
+                    playback.SELECTED_PLAYBACK_CHAN,
+                    @intCast(midi_note),
+                ),
+            );
         },
         else => return .no_op,
     }
