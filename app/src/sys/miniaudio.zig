@@ -102,7 +102,7 @@ pub const Sound = struct {
 
         const res = engine.*.ma_sound_init_from_file(
             path,
-            ma.MA_SOUND_FLAG_STREAM,
+            ma.MA_SOUND_FLAG_DECODE | ma.MA_SOUND_FLAG_STREAM,
             null,
             null,
             sound,

@@ -7,7 +7,7 @@ const lib = @import("lib");
 
 const Mode = enum { search, explore };
 const ActiveParam = enum { centroid, width, pitch };
-const Pending = struct { path: [:0]const u8, vel: u8 };
+const Pending = struct { path: [:0]const u8, amp: f32 };
 
 idx: usize,
 mode: Mode = .explore,
@@ -15,6 +15,7 @@ active_param: ActiveParam = .centroid,
 search_text: std.ArrayList(u8),
 params: lib.SearchParams,
 
+mu: Io.Mutex = .init,
 engine: lib.ma.Engine,
 pending_sound: std.atomic.Value(?*Pending) = .init(null),
 samples: []lib.SampleEntry,
@@ -36,7 +37,8 @@ pub fn publishSelection(self: *Self, gpa: Allocator) !void {
     const path = try gpa.dupeSentinel(u8, curr.fullpath, 0);
     errdefer gpa.free(path);
 
-    p.* = .{ .path = path, .vel = 127 };
+    const amp = curr.ampToLufs(self.target_lufs);
+    p.* = .{ .path = path, .amp = amp };
 
     if (self.pending_sound.swap(p, .acq_rel)) |stale| {
         gpa.free(stale.path);

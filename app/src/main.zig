@@ -137,6 +137,14 @@ fn read(io: Io, arena: Allocator, db_url: [:0]const u8, use_midi: bool) !void {
     var fut = try io.concurrent(tui.playback.playbackQueue, .{ audio_alloc, io, &app });
     defer fut.cancel(io);
 
+    // TODO: this design is horrible as it lags every navigation in the UI
+    // IDEA: on each render check if there is a new midi event and flush to playback buffer with meta / event
+    // this would have to be non blocking as we can not have events pause the UI
+    // TODO: playback is now super clickly and horrible (do not use fades)
+    // IDNEA: put a mutex on the App{} and acquire lock in UI / Playback / Keys
+    // IDNEA: two writers (TUI keys, MIDI input)
+    // IDNEA: one reader UI
+
     ////////////////////////
     // RENDERING
     ////////////////////////

@@ -31,29 +31,25 @@ fn renderLoop(gpa: Allocator, io: Io, app: *App, sound: *?lib.ma.Sound) !void {
         return e;
     };
     if (!event.isNoteOn()) return;
-
     const pitch: i32 = @as(i32, @intCast(event.note)) -| @as(i32, @intCast(60));
 
-    if (app.pending_sound.swap(null, .acq_rel)) |p| {
-        defer {
-            gpa.free(p.path);
-            gpa.destroy(p);
-        }
+    if (sound.* == null) {
+        try app.mu.lock(io);
+        defer app.mu.unlock(io);
+        const curr = app.currFile() orelse return;
+        const cstr = try gpa.dupeSentinel(u8, curr.fullpath, 0);
+        defer gpa.free(cstr);
+        const amp = curr.ampToLufs(app.target_lufs);
 
-        if (sound.*) |s| {
-            s.stop() catch {};
-            s.deinit(gpa);
-        }
-        sound.* = lib.ma.Sound.init(gpa, app.engine.ptr, p.path) catch null;
-    } else {
-        // std.log.debug("NO pending sound", .{});
+        sound.* = try lib.ma.Sound.init(gpa, app.engine.ptr, cstr);
+        sound.*.?.setGain(amp);
     }
 
     const s = sound.* orelse {
-        // std.log.debug("NO SOUND AGAIN", .{});
         return;
     };
-    // s.stop() catch continue;
+
+    try s.stop();
     try s.seek(0);
     s.setPitch(@floatFromInt(pitch));
     try s.play();
