@@ -20,6 +20,15 @@ pub fn build(b: *std.Build) void {
     // of this build script using `b.option()`. All defined flags (including
     // target and optimize options) will be listed when running `zig build --help`
     // in this directory.
+    const coremidi = b.addTranslateC(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("./include/coremidi.h"),
+        .link_libc = false,
+    });
+    const coremidi_mod = coremidi.createModule();
+    coremidi_mod.linkFramework("CoreFoundation", .{});
+    coremidi_mod.linkFramework("CoreMIDI", .{ .needed = true });
 
     const sqlite = b.addTranslateC(.{
         .target = target,
@@ -70,6 +79,16 @@ pub fn build(b: *std.Build) void {
         .file = b.path("include/miniaudio.c"),
         .language = .c,
     });
+    if (target.result.os.tag == .macos) {
+        // Cross-arch builds don't auto-detect the SDK, so point at it directly.
+        const sdk = std.mem.trimEnd(u8, b.run(&.{ "xcrun", "--sdk", "macosx", "--show-sdk-path" }), "\n");
+        miniaudio_mod.addSystemFrameworkPath(.{ .cwd_relative = b.pathJoin(&.{ sdk, "System/Library/Frameworks" }) });
+        miniaudio_mod.addSystemIncludePath(.{ .cwd_relative = b.pathJoin(&.{ sdk, "usr/include" }) });
+        miniaudio_mod.addLibraryPath(.{ .cwd_relative = b.pathJoin(&.{ sdk, "usr/lib" }) });
+    }
+    miniaudio_mod.linkFramework("CoreFoundation", .{});
+    miniaudio_mod.linkFramework("CoreAudio", .{});
+    miniaudio_mod.linkFramework("AudioToolbox", .{});
 
     // This creates a module, which represents a collection of source files alongside
     // some compilation options, such as optimization mode and linked system libraries.
@@ -81,11 +100,13 @@ pub fn build(b: *std.Build) void {
     const mod = b.addModule("zigs", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "miniaudio", .module = miniaudio_mod },
             .{ .name = "sqlite", .module = sqlite_mod },
             .{ .name = "ebur128", .module = ebur128_mod },
             .{ .name = "kissfft", .module = kissfft_mod },
+            .{ .name = "coremidi", .module = coremidi_mod },
         },
     });
 

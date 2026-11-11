@@ -7,6 +7,7 @@ const lib = @import("lib");
 
 const Mode = enum { search, explore };
 const ActiveParam = enum { centroid, width, pitch };
+const Pending = struct { path: [:0]const u8, vel: u8 };
 
 idx: usize,
 mode: Mode = .explore,
@@ -15,22 +16,40 @@ search_text: std.ArrayList(u8),
 params: lib.SearchParams,
 
 engine: lib.ma.Engine,
-sound: ?lib.ma.Sound = null,
+pending_sound: std.atomic.Value(?*Pending) = .init(null),
 samples: []lib.SampleEntry,
+midi_ctx: lib.midi.MidiCtx,
 
-pitch_semitones: f32 = 0.0,
+pitch_semitones: u8 = 0,
 target_lufs: f32 = -17.0,
 limit: usize,
 page: usize,
 
 const Self = @This();
 
-pub fn setPitch(self: *Self, semitones: f32) void {
-    const max_pitch = @max(-12, @min(12, semitones));
-    self.pitch_semitones = max_pitch;
-    if (self.sound != null) {
-        self.sound.?.setPitch(semitones);
+pub fn publishSelection(self: *Self, gpa: Allocator) !void {
+    const curr = self.currFile() orelse return;
+
+    const p = try gpa.create(Pending);
+    errdefer gpa.destroy(p);
+
+    const path = try gpa.dupeSentinel(u8, curr.fullpath, 0);
+    errdefer gpa.free(path);
+
+    p.* = .{ .path = path, .vel = 127 };
+
+    if (self.pending_sound.swap(p, .acq_rel)) |stale| {
+        gpa.free(stale.path);
+        gpa.destroy(stale);
     }
+}
+
+/// TODO: deprecate this as this doesnt work anymore
+pub fn setPitch(self: *Self, semitones: u8) void {
+    self.pitch_semitones = semitones;
+    // if (self.sound != null) {
+    //     self.sound.?.setPitch(semitones);
+    // }
 }
 
 pub fn nextPage(self: *Self) bool {

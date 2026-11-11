@@ -9,6 +9,7 @@ pub const miniaudio = @import("miniaudio");
 pub const decode = @import("audio/decode.zig");
 pub const audio = @import("audio/root.zig");
 pub const scanner = @import("scanner.zig");
+pub const midi = @import("sys/coremidi.zig");
 pub const ma = @import("sys/miniaudio.zig");
 pub const db = @import("sys/sqlite.zig");
 

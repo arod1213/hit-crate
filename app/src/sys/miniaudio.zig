@@ -120,13 +120,13 @@ pub const Sound = struct {
         self.ptr.set_volume(amp);
     }
 
-    pub fn setPitch(self: Self, semitones: f32) void {
-        const max_pitch = @max(-12, @min(12, semitones));
-        const float_mult = std.math.pow(f32, 2.0, max_pitch / 12.0);
+    pub fn setPitch(self: Self, semitones: u8) void {
+        const pitch_float: f32 = @floatFromInt(semitones);
+        const float_mult = std.math.pow(f32, 2.0, pitch_float / 12.0);
         self.ptr.set_pitch(float_mult);
     }
 
-    pub fn play(self: Self, pitch_semitones: f32) !void {
+    pub fn play(self: Self, pitch_semitones: u8) !void {
         if (pitch_semitones != 0) {
             self.setPitch(pitch_semitones);
         }

@@ -6,6 +6,7 @@ const lib = @import("lib");
 
 pub const App = @import("app.zig");
 pub const input = @import("input.zig");
+pub const playback = @import("playback.zig");
 
 pub const RenderDepth = enum { all, ui };
 
@@ -203,19 +204,8 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
         // play selected
         .space => {
             depth = .ui;
-            const curr = app.currFile() orelse return depth;
-            if (app.sound) |snd| {
-                snd.deinit(alloc);
-            }
-            const cstr: [:0]u8 = try alloc.dupeSentinel(u8, curr.fullpath, 0);
-            app.sound = try lib.ma.Sound.init(alloc, app.engine.ptr, cstr);
-
-            const new_amp = curr.ampToLufs(app.target_lufs);
-
-            app.sound.?.setGain(new_amp);
-            app.sound.?.play(app.pitch_semitones) catch |e| {
-                std.log.err("failed to play: {}", .{e});
-            };
+            try app.publishSelection(alloc);
+            try app.midi_ctx.queue.putOne(io, lib.midi.MidiEvent.noteOn(60 +| app.pitch_semitones));
         },
         else => {},
     }

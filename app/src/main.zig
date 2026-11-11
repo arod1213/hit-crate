@@ -79,60 +79,69 @@ pub fn main(init: std.process.Init) !void {
 
             try lib.scanner.saveDir(io, path, conn);
         },
-        .read => {
-            const conn = try db.connect(db_url_cstr, true);
-            defer db.close(conn);
+        .read => try read(io, alloc, db_url_cstr),
+    }
+}
 
-            var buffer: [256]u8 = undefined;
-            const stdin = Io.File.stdin();
-            var rdr = stdin.reader(io, &buffer);
+fn read(io: Io, arena: Allocator, db_url: [:0]const u8) !void {
+    const conn = try db.connect(db_url, true);
+    defer db.close(conn);
 
-            var term = try tui.input.Termios.init(stdin.handle);
-            try term.singleChar();
-            defer term.deinit() catch {};
+    var buffer: [256]u8 = undefined;
+    const stdin = Io.File.stdin();
+    var rdr = stdin.reader(io, &buffer);
 
-            var out_buffer: [256]u8 = undefined;
-            const stdout = Io.File.stdout();
-            var wrt = stdout.writer(io, &out_buffer);
+    var term = try tui.input.Termios.init(stdin.handle);
+    try term.singleChar();
+    defer term.deinit() catch {};
 
-            const engine = try lib.ma.Engine.init(alloc);
-            defer engine.deinit(alloc);
+    var out_buffer: [256]u8 = undefined;
+    const stdout = Io.File.stdout();
+    var wrt = stdout.writer(io, &out_buffer);
 
-            var search_text = try std.ArrayList(u8).initCapacity(alloc, 10);
-            defer search_text.deinit(alloc);
+    const engine = try lib.ma.Engine.init(arena);
+    defer engine.deinit(arena);
 
-            var app = tui.App{
-                .limit = 10,
-                .page = 0,
-                .idx = 0,
-                .samples = &[0]lib.SampleEntry{},
-                .engine = engine,
-                .search_text = search_text,
-                .params = lib.SearchParams{
-                    .search_text = "kick",
-                },
-            };
-            defer {
-                if (app.sound) |snd| {
-                    snd.deinit(alloc);
-                }
-            }
+    var search_text = try std.ArrayList(u8).initCapacity(arena, 10);
+    defer search_text.deinit(arena);
 
-            var render_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-            defer render_arena.deinit();
-            const render_alloc = render_arena.allocator();
-
-            var depth: tui.RenderDepth = .all;
-            while (true) {
-                app.params.search_text = app.search_text.items;
-                if (depth == .all) {
-                    _ = render_arena.reset(.free_all);
-                    app.samples = try lib.querySamples(render_alloc, conn, app.params, app.limit, app.page);
-                }
-
-                try tui.render(&wrt.interface, &app);
-                depth = try tui.handleKeys(io, alloc, &app, &rdr.interface);
-            }
+    var midi_buff: [80]lib.midi.MidiEvent = undefined;
+    var app = tui.App{
+        .limit = 10,
+        .page = 0,
+        .idx = 0,
+        .samples = &[0]lib.SampleEntry{},
+        .midi_ctx = lib.midi.MidiCtx{
+            .io = io,
+            .queue = Io.Queue(lib.midi.MidiEvent).init(&midi_buff),
         },
+        .engine = engine,
+        .search_text = search_text,
+        .params = lib.SearchParams{
+            .search_text = "kick",
+        },
+    };
+    defer app.midi_ctx.queue.close(io);
+
+    try lib.midi.setupListener(&app.midi_ctx);
+    var fut = try io.concurrent(tui.playback.playbackQueue, .{ arena, io, &app });
+    defer fut.cancel(io);
+
+    try app.publishSelection(std.heap.smp_allocator); // init first sound (use other alloc to let other thread free it)
+
+    var render_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer render_arena.deinit();
+    const render_alloc = render_arena.allocator();
+
+    var depth: tui.RenderDepth = .all;
+    while (true) {
+        app.params.search_text = app.search_text.items;
+        if (depth == .all) {
+            _ = render_arena.reset(.free_all);
+            app.samples = try lib.querySamples(render_alloc, conn, app.params, app.limit, app.page);
+        }
+
+        try tui.render(&wrt.interface, &app);
+        depth = try tui.handleKeys(io, arena, &app, &rdr.interface);
     }
 }
