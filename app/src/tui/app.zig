@@ -17,41 +17,19 @@ params: lib.SearchParams,
 
 mu: Io.Mutex = .init,
 engine: lib.ma.Engine,
-pending_sound: std.atomic.Value(?*Pending) = .init(null),
 samples: []lib.SampleEntry,
 midi_ctx: lib.midi.MidiCtx,
 
-pitch_semitones: u8 = 0,
+pitch_semitones: i32 = 0,
 target_lufs: f32 = -17.0,
 limit: usize,
 page: usize,
 
 const Self = @This();
 
-pub fn publishSelection(self: *Self, gpa: Allocator) !void {
-    const curr = self.currFile() orelse return;
-
-    const p = try gpa.create(Pending);
-    errdefer gpa.destroy(p);
-
-    const path = try gpa.dupeSentinel(u8, curr.fullpath, 0);
-    errdefer gpa.free(path);
-
-    const amp = curr.ampToLufs(self.target_lufs);
-    p.* = .{ .path = path, .amp = amp };
-
-    if (self.pending_sound.swap(p, .acq_rel)) |stale| {
-        gpa.free(stale.path);
-        gpa.destroy(stale);
-    }
-}
-
-/// TODO: deprecate this as this doesnt work anymore
-pub fn setPitch(self: *Self, semitones: u8) void {
-    self.pitch_semitones = semitones;
-    // if (self.sound != null) {
-    //     self.sound.?.setPitch(semitones);
-    // }
+pub fn setPitch(self: *Self, semitones: i32) void {
+    const clipped = @max(-36, @min(36, semitones));
+    self.pitch_semitones = clipped;
 }
 
 pub fn nextPage(self: *Self) bool {

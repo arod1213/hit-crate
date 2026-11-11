@@ -113,7 +113,7 @@ fn read(io: Io, arena: Allocator, db_url: [:0]const u8, use_midi: bool) !void {
 
     var midi_buff: [80]lib.midi.MidiEvent = undefined;
     var app = tui.App{
-        .limit = 10,
+        .limit = 3,
         .page = 0,
         .idx = 0,
         .samples = &[0]lib.SampleEntry{},
@@ -129,45 +129,48 @@ fn read(io: Io, arena: Allocator, db_url: [:0]const u8, use_midi: bool) !void {
     };
     defer app.midi_ctx.queue.close(io);
 
+    var sample_list_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer sample_list_arena.deinit();
+    const sample_list_arena_alloc = sample_list_arena.allocator();
+    app.samples = try lib.querySamples(sample_list_arena_alloc, conn, app.params, app.limit, app.page);
+
     ////////////////////////
     // PLAYBACK
     ////////////////////////
-    const audio_alloc = std.heap.smp_allocator;
     if (use_midi) try lib.midi.setupListener(&app.midi_ctx);
-    var fut = try io.concurrent(tui.playback.playbackQueue, .{ audio_alloc, io, &app });
-    defer fut.cancel(io);
 
-    // TODO: this design is horrible as it lags every navigation in the UI
-    // IDEA: on each render check if there is a new midi event and flush to playback buffer with meta / event
-    // this would have to be non blocking as we can not have events pause the UI
-    // TODO: playback is now super clickly and horrible (do not use fades)
-    // IDNEA: put a mutex on the App{} and acquire lock in UI / Playback / Keys
-    // IDNEA: two writers (TUI keys, MIDI input)
-    // IDNEA: one reader UI
+    // used for key command / midi triggers to update UI / shown samples
+    var cmd_buffer: [80]tui.sync.CommandType = undefined;
+    var cmd_queue = tui.sync.CommandQueue.init(&cmd_buffer);
+    defer cmd_queue.close(io);
+
+    const audio_alloc = std.heap.smp_allocator;
+    var fut_audio = try io.concurrent(tui.playback.listen, .{ audio_alloc, io, &app });
+    defer fut_audio.cancel(io);
+
+    var fut_keys = try io.concurrent(tui.keys.listen, .{ io, arena, &app, &rdr.interface, &cmd_queue });
+    defer fut_keys.cancel(io);
 
     ////////////////////////
     // RENDERING
     ////////////////////////
-    var ui_arena = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
-    defer ui_arena.deinit();
-    const ui_arena_alloc = ui_arena.allocator();
-
-    var depth: tui.RenderDepth = .all;
     while (true) {
-        app.params.search_text = app.search_text.items;
-        if (depth == .all) {
-            _ = ui_arena.reset(.free_all);
-            app.samples = try lib.querySamples(
-                ui_arena_alloc,
-                conn,
-                app.params,
-                app.limit,
-                app.page,
-            );
-        }
-        try app.publishSelection(audio_alloc);
-
+        try app.mu.lock(io);
+        errdefer app.mu.unlock(io);
         try tui.render(&wrt.interface, &app);
-        depth = try tui.handleKeys(io, arena, &app, &rdr.interface);
+        app.mu.unlock(io);
+
+        while (true) {
+            const cmd_type = try cmd_queue.getOne(io);
+            switch (cmd_type) {
+                .fetch => {
+                    _ = sample_list_arena.reset(.free_all);
+                    app.samples = try lib.querySamples(sample_list_arena_alloc, conn, app.params, app.limit, app.page);
+                    break;
+                },
+                .key => break,
+                .no_op => {},
+            }
+        }
     }
 }

@@ -22,7 +22,10 @@ pub fn setupListener(out_ctx: *MidiCtx) !void {
     }
 
     const count = midi.MIDIGetNumberOfSources();
-    if (count == 0) return error.NoSources;
+    if (count == 0) {
+        std.log.debug("no MIDI sources found", .{});
+        return;
+    }
     for (0..count) |id| {
         try clientConnect(id, port);
     }

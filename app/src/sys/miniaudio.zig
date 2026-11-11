@@ -91,6 +91,7 @@ pub const Engine = struct {
 
 pub const Sound = struct {
     ptr: *ma.ma_sound,
+    // TODO: maybe add fullpath here to check for equality?
 
     const Self = @This();
 
