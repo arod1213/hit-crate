@@ -187,7 +187,7 @@ pub fn querySamples(gpa: Allocator, conn: db.Connection, params: SearchParams, l
                 \\ SELECT s.path, s.name, s.width, s.true_peak, s.rms, s.centroid
                 \\ FROM samples s
                 \\ JOIN samples_fts f on f.rowid = s.rowid
-                \\ WHERE f.name MATCH ?1 || '*'
+                \\ WHERE f.name MATCH '"' || replace(?1, '"', '""') || '"'
                 \\ AND s.width BETWEEN ?2 and ?3
                 \\ AND s.centroid BETWEEN ?4 and ?5
                 \\ {s}
