@@ -163,14 +163,14 @@ fn read(io: Io, arena: Allocator, db_url: [:0]const u8, use_midi: bool) !void {
         while (true) {
             const cmd_type = try cmd_queue.getOne(io);
             switch (cmd_type) {
+                .key => {},
                 .fetch => {
                     _ = sample_list_arena.reset(.free_all);
                     app.samples = try lib.querySamples(sample_list_arena_alloc, conn, app.params, app.limit, app.page);
-                    break;
                 },
-                .key => break,
-                .no_op => {},
+                .no_op => continue,
             }
+            break;
         }
     }
 }

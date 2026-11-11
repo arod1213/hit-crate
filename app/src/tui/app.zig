@@ -7,7 +7,6 @@ const lib = @import("lib");
 
 const Mode = enum { search, explore };
 const ActiveParam = enum { centroid, width, pitch };
-const Pending = struct { path: [:0]const u8, amp: f32 };
 
 idx: usize,
 mode: Mode = .explore,

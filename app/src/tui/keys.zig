@@ -39,7 +39,10 @@ fn handleSearch(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !CommandTy
     try app.mu.lock(io);
     defer app.mu.unlock(io);
     switch (b) {
-        '\n', '\r', 0x1B => app.mode = .explore,
+        '\n', '\r', 0x1B => {
+            app.mode = .explore;
+            return .key;
+        },
         0x7F, 0x08 => _ = {
             _ = app.search_text.pop();
             app.page = 0;
@@ -51,7 +54,8 @@ fn handleSearch(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !CommandTy
             app.idx = 0;
         },
     }
-    return .key;
+    app.params.search_text = app.search_text.items;
+    return .fetch;
 }
 
 fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
