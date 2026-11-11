@@ -112,6 +112,15 @@ pub fn main(init: std.process.Init) !void {
             var out_buffer: [256]u8 = undefined;
             const stdout = Io.File.stdout();
             var wrt = stdout.writer(io, &out_buffer);
+            // var dbg = std.heap.DebugAllocator(.{ .verbose_log = true }).init;
+            // defer {
+            //     const leak_count = dbg.detectLeaks();
+            //     std.log.debug("found {d} leaks", .{leak_count});
+            //     const res = dbg.deinit();
+            //     if (res == .leak) {
+            //         @panic("LEAKED");
+            //     }
+            // }
             try read(io, init.gpa, conn, &rdr.interface, &wrt.interface, use_midi);
         },
     }

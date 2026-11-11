@@ -11,6 +11,7 @@ pub const App = @import("app.zig");
 // const CommandType = sync.CommandType;
 
 pub const SELECTED_PLAYBACK_CHAN = 255;
+const ROOT_MIDI_NOTE = 60;
 const TOTAL_CHANNELS = App.NUM_VOICES + 1;
 
 pub fn listen(gpa: Allocator, io: Io, app: *App) void {
@@ -49,7 +50,7 @@ fn renderLoop(gpa: Allocator, io: Io, app: *App, sounds: *[TOTAL_CHANNELS]?lib.m
     const pitch: i32 = @as(i32, @intCast(event.note)) -| @as(i32, @intCast(60));
 
     switch (event.channel()) {
-        else => {
+        SELECTED_PLAYBACK_CHAN => {
             // last buffer idx is selected chan
             const selected_chan = &sounds[sounds.len - 1];
             if (selected_chan.*) |snd| {
@@ -67,16 +68,24 @@ fn renderLoop(gpa: Allocator, io: Io, app: *App, sounds: *[TOTAL_CHANNELS]?lib.m
             selected_chan.* = try lib.ma.Sound.init(gpa, app.engine.ptr, cstr);
             selected_chan.*.?.setGain(amp);
 
-            const s = selected_chan.* orelse return;
+            const snd = selected_chan.* orelse return;
 
-            try s.stop();
-            try s.seek(0);
-            s.setPitch(@floatFromInt(pitch));
-            try s.play();
+            try snd.stop();
+            try snd.seek(0);
+            snd.setPitch(@floatFromInt(pitch));
+            try snd.play();
         },
-        // else => {
-        // TODO: handle sequencer playback here
-        //
-        // },
+        // Sequencer playback
+        else => {
+            if (event.note < ROOT_MIDI_NOTE) return;
+            const playback_chan = event.note - ROOT_MIDI_NOTE;
+            if (playback_chan >= TOTAL_CHANNELS) return; // out of bounds
+            if (sounds[@intCast(playback_chan)]) |snd| {
+                try snd.stop();
+                try snd.seek(0);
+                snd.setPitch(@floatFromInt(pitch));
+                try snd.play();
+            }
+        },
     }
 }
