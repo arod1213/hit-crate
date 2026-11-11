@@ -9,6 +9,7 @@ pub const App = @import("app.zig");
 pub fn playbackQueue(gpa: Allocator, io: Io, app: *App) void {
     var sound: ?lib.ma.Sound = null;
     defer if (sound) |snd| {
+        snd.stop() catch {};
         snd.deinit(gpa);
     };
 
@@ -29,21 +30,21 @@ fn renderLoop(gpa: Allocator, io: Io, app: *App, sound: *?lib.ma.Sound) !void {
         std.log.err("failed to get MIDI note {}", .{e});
         return e;
     };
-    // std.log.info("checking vel {d} and note {d} event {d}", .{ event.velocity, event.note, event.event });
     if (!event.isNoteOn()) return;
-    // std.log.info("passed", .{});
 
-    const pitch = event.note -| 60;
+    const pitch: i32 = @as(i32, @intCast(event.note)) -| @as(i32, @intCast(60));
 
     if (app.pending_sound.swap(null, .acq_rel)) |p| {
-        // std.log.debug("SOUND FOUND", .{});
         defer {
             gpa.free(p.path);
             gpa.destroy(p);
         }
-        if (sound.*) |s| s.deinit(gpa);
+
+        if (sound.*) |s| {
+            s.stop() catch {};
+            s.deinit(gpa);
+        }
         sound.* = lib.ma.Sound.init(gpa, app.engine.ptr, p.path) catch null;
-        // if (sound) |s| s.setGain(p.gain);
     } else {
         // std.log.debug("NO pending sound", .{});
     }
@@ -54,5 +55,6 @@ fn renderLoop(gpa: Allocator, io: Io, app: *App, sound: *?lib.ma.Sound) !void {
     };
     // s.stop() catch continue;
     try s.seek(0);
-    try s.play(pitch);
+    s.setPitch(@floatFromInt(pitch));
+    try s.play();
 }

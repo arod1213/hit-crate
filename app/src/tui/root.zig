@@ -154,6 +154,7 @@ pub fn handleExplore(io: Io, alloc: Allocator, app: *App, rdr: *Io.Reader) !Rend
         // reset
         .r => {
             app.search_text.clearAndFree(alloc);
+            app.pitch_semitones = 0;
             app.params = .{
                 .search_text = app.search_text.items,
             };
