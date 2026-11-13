@@ -52,8 +52,7 @@ pub fn main(init: std.process.Init) !void {
     const db_url_cstr = try alloc.dupeSentinel(u8, cfg.db_url, 0);
 
     const args = try init.minimal.args.toSlice(alloc);
-    if (args.len < 2) return error.MissingArgs;
-    const command = std.meta.stringToEnum(cmd, args[1]) orelse return error.InvalidCommand;
+    const command: cmd = if (args.len > 1) std.meta.stringToEnum(cmd, args[1]) orelse .read else .read;
 
     switch (command) {
         .trigger => {
@@ -67,11 +66,11 @@ pub fn main(init: std.process.Init) !void {
             try db.exec(conn, "VACUUM");
         },
         .scan => {
-            if (args.len < 3) {
+            if (args.len < 2) {
                 std.log.err("please provide a folder path to scan", .{});
                 return;
             }
-            const path = args[2];
+            const path = args[args.len - 1]; // last value
             var file = Io.Dir.openFileAbsolute(io, cfg.lock_file, .{ .lock = .exclusive }) catch |e| {
                 std.log.err("failed to acquire lock {}", .{e});
                 return e;
@@ -175,8 +174,10 @@ fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *
     ////////////////////////
     while (true) {
         try app.mu.lock(io);
-        errdefer app.mu.unlock(io);
-        try tui.render(wrt, &app);
+        tui.render(wrt, &app) catch |e| {
+            app.mu.unlock(io);
+            return e;
+        };
         app.mu.unlock(io);
 
         // only loops if no_ops are sent

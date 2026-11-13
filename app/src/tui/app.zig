@@ -4,6 +4,7 @@ const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 
 const lib = @import("lib");
+const Slot = @import("slot.zig");
 
 const Mode = enum {
     search, // create search text
@@ -19,7 +20,7 @@ engine: lib.ma.Engine,
 // used to render list of matching samples
 samples: []lib.SampleEntry,
 // used for drum kit playback
-sequencer_samples: [NUM_VOICES]?lib.SampleEntry = std.mem.zeroes([NUM_VOICES]?lib.SampleEntry),
+sequencer_samples: [NUM_VOICES]?Slot = std.mem.zeroes([NUM_VOICES]?Slot),
 
 search_text: std.ArrayList(u8),
 midi_ctx: lib.midi.MidiCtx,
@@ -80,7 +81,7 @@ pub fn currFile(self: Self) ?lib.SampleEntry {
     return self.samples[self.idx];
 }
 
-pub fn sequencerSample(self: Self, idx: usize) ?lib.SampleEntry {
+pub fn sequencerSample(self: Self, idx: usize) ?Slot {
     if (idx >= self.sequencer_samples.len) return null;
     return self.sequencer_samples[idx];
 }
