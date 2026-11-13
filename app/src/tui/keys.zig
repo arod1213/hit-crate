@@ -73,6 +73,10 @@ fn handlePush(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
         .@"2" => 1,
         .@"3" => 2,
         .@"4" => 3,
+        // .@"5" => 4,
+        // .@"6" => 5,
+        // .@"7" => 6,
+        // .@"8" => 7,
         else => return .key,
     };
     assert(idx < App.NUM_VOICES);
@@ -153,6 +157,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
             app.params = .{
                 .search_text = app.search_text.items,
             };
+            app.page = 0;
             cmd_type = .fetch;
         },
         // find similar
@@ -165,6 +170,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
                 }
                 app.params.width.setValue(curr.width) catch {};
                 app.params.width.tolerance_percent = 2;
+                app.page = 0;
                 cmd_type = .fetch;
             }
         },
@@ -199,7 +205,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
         },
         // play selected
         .space => {
-            const curr = app.currFile() orelse return .no_op;
+            const sample = app.currFile() orelse return .no_op;
 
             assert(app.sequencer_samples.len > 0);
             const idx = app.sequencer_samples.len - 1;
@@ -207,21 +213,22 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
                 gpa,
                 app,
                 idx,
-                curr,
+                sample,
             );
             assert(app.sequencer_samples[idx] != null);
 
             const midi_shift = 60 +| app.pitch_semitones;
-            const midi_note: i32 = @max(0, @min(std.math.maxInt(u8), midi_shift));
-            assert(midi_note >= 0);
-            assert(midi_note <= std.math.maxInt(u8));
+            const midi_note: i32 = @max(
+                0,
+                @min(std.math.maxInt(u8), midi_shift),
+            );
 
             try app.midi_ctx.queue.putOne(
                 io,
                 lib.midi.MidiEvent.noteOn(
                     playback.SELECTED_PLAYBACK_CHAN,
                     @intCast(midi_note),
-                    Io.Clock.now(.boot, io).toNanoseconds(),
+                    Io.Clock.now(.awake, io).toNanoseconds(),
                 ),
             );
         },
@@ -230,12 +237,12 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
     return cmd_type;
 }
 
-fn saveSound(gpa: Allocator, app: *App, idx: usize, curr: lib.SampleEntry) !void {
-    const fullpath = try gpa.dupe(u8, curr.fullpath);
+fn saveSound(gpa: Allocator, app: *App, idx: usize, sample: lib.SampleEntry) !void {
+    const fullpath = try gpa.dupe(u8, sample.fullpath);
     errdefer gpa.free(fullpath);
 
     // only needed to open miniaudio.sound
-    const cstr = try gpa.dupeSentinel(u8, curr.fullpath, 0);
+    const cstr = try gpa.dupeSentinel(u8, sample.fullpath, 0);
     defer gpa.free(cstr);
 
     app.sequencer_samples[idx] = .{

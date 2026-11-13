@@ -73,6 +73,9 @@ pub fn render(w: *Io.Writer, app: *const App) !void {
     }
 
     for (app.sequencer_samples, 0..) |seq, idx| {
+        // skip last slot for selected track
+        if (idx == app.sequencer_samples.len - 1) break;
+
         if (seq) |_| {
             try w.print("{d}: ^^^", .{idx + 1});
         } else {

@@ -48,7 +48,20 @@ fn renderLoop(_: Allocator, io: Io, app: *App, slots: *[NUM_VOICES]?Slot) !void 
         },
     };
     if (slots.*[idx]) |s| {
+        const start_offset_frames = getSoundStartFrame(io, &app.engine, event.timestamp);
         try s.sound.seek(0);
+        s.sound.ptr.set_start_time_in_pcm_frames(start_offset_frames);
         try s.sound.play();
     }
+}
+
+const SCHEDULE_LATENCY_NS: i96 = 10 * std.time.ns_per_ms;
+fn getSoundStartFrame(io: Io, engine: *const lib.ma.Engine, event_ns: i96) u64 {
+    const elapsed_ns = Io.Timestamp.fromNanoseconds(event_ns)
+        .untilNow(io, .awake).nanoseconds;
+    const delay_ns: i96 = @max(0, SCHEDULE_LATENCY_NS - elapsed_ns);
+
+    const sample_rate: i96 = engine.ptr.get_sample_rate();
+    const delay_frames: u64 = @intCast(@divTrunc(delay_ns * sample_rate, std.time.ns_per_s));
+    return engine.ptr.get_time_in_pcm_frames() + delay_frames;
 }

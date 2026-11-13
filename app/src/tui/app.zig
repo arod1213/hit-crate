@@ -13,7 +13,8 @@ const Mode = enum {
 };
 const ActiveParam = enum { centroid, width, pitch };
 
-pub const NUM_VOICES = 4;
+// add +1 for selected track output
+pub const NUM_VOICES = 4 + 1;
 
 mu: Io.Mutex = .init,
 engine: lib.ma.Engine,
