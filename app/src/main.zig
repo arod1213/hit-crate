@@ -163,7 +163,7 @@ fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *
     var cmd_queue = tui.sync.CommandQueue.init(&cmd_buffer);
     defer cmd_queue.close(io);
 
-    var fut_audio = try io.concurrent(tui.playback.listen, .{ gpa, io, &app });
+    var fut_audio = try io.concurrent(tui.playback.listen, .{ io, &app });
     defer fut_audio.cancel(io);
 
     var fut_keys = try io.concurrent(tui.keys.listen, .{ io, gpa, &app, rdr, &cmd_queue });

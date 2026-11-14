@@ -76,9 +76,12 @@ pub const Engine = struct {
     const Self = @This();
 
     pub fn init(alloc: Allocator) !Self {
+        var config = ma.ma_engine_config_init();
+        config.periodSizeInFrames = 256;
+
         const engine = try alloc.create(ma.ma_engine);
         errdefer alloc.destroy(engine);
-        const res = ma.ma_engine_init(null, engine);
+        const res = ma.ma_engine_init(&config, engine);
         if (res != ma.MA_SUCCESS) return error.NoOpen;
         return .{ .ptr = engine };
     }

@@ -170,11 +170,12 @@ fn parsePacket(ctx: *MidiCtx, data: []const u8, timestamp: i96) void {
         };
         if (i + data_len > data.len) return; // truncated message
 
+        const time_ns = machTickToNs(timestamp) catch return;
         const event: MidiEvent = .{
             .event = status,
             .note = data[i],
             .velocity = if (data_len == 2) data[i + 1] else 0,
-            .timestamp = timestamp,
+            .timestamp = time_ns,
         };
         i += data_len;
 
@@ -182,6 +183,15 @@ fn parsePacket(ctx: *MidiCtx, data: []const u8, timestamp: i96) void {
             std.log.err("err {}", .{e});
         };
     }
+}
+
+fn machTickToNs(ticks: i96) !i96 {
+    var tb: std.c.mach_timebase_info_data = undefined;
+    if (std.c.mach_timebase_info(&tb) != 0) return error.NoInfo;
+    return @divTrunc(
+        ticks * @as(i96, @intCast(tb.numer)),
+        @as(i96, @intCast(tb.denom)),
+    );
 }
 
 fn newCFString(str: [:0]const u8) ?*const midi.struct___CFString {
