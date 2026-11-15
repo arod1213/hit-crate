@@ -12,7 +12,7 @@ pub const App = @import("app.zig");
 // const CommandType = sync.CommandType;
 
 pub const SELECTED_PLAYBACK_CHAN = 15;
-const NUM_VOICES = App.NUM_VOICES;
+pub const NUM_VOICES = App.NUM_VOICES;
 const ROOT_MIDI_NOTE = 60;
 
 pub fn listen(io: Io, app: *App) void {
@@ -47,8 +47,13 @@ fn renderLoop(io: Io, app: *App) !void {
     };
 
     const sample = app.sequencer_samples[idx] orelse return;
-    const start_offset_frames = getSoundStartFrame(io, &app.engine, event.timestamp);
+    const amp = lib.audio.dbToAmp(f32, sample.gain_db);
+
     try sample.sound.seek(0);
+    sample.sound.setPitch(sample.pitch_offset);
+    sample.sound.setGain(amp);
+
+    const start_offset_frames = getSoundStartFrame(io, &app.engine, event.timestamp);
     sample.sound.ptr.set_start_time_in_pcm_frames(start_offset_frames);
     try sample.sound.play();
 }

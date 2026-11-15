@@ -135,7 +135,9 @@ fn eventCallback(pkt_list: [*c]const midi.MIDIPacketList, ref_ctx: ?*anyopaque, 
 
     var pck: *const midi.MIDIPacket = @ptrCast(&pkt_list.*.packet[0]);
     for (0..count) |_| {
-        parsePacket(ctx, pck.data[0..pck.length], @intCast(pck.timeStamp));
+        if (pck.length > 0) {
+            parsePacket(ctx, pck.data[0..pck.length], @intCast(pck.timeStamp));
+        }
         const next = pck.MIDIPacketNext();
         if (next == null) break;
         pck = next;

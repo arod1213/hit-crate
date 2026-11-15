@@ -26,12 +26,50 @@ pub fn listen(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader, cmd_queue: *sy
 }
 
 fn handleKey(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader, cmd_queue: *sync.CommandQueue) !void {
-    const cmd_type = switch (app.mode) {
+    const cmd_type: CommandType = switch (app.mode) {
         .explore => try handleExplore(io, gpa, app, rdr),
         .search => try handleSearch(io, gpa, app, rdr),
         .push => try handlePush(io, gpa, app, rdr),
+        // else => unreachable,
+        .track => |idx| try handleTrack(io, app, rdr, idx),
     };
     try cmd_queue.putOne(io, cmd_type);
+}
+
+fn handleTrack(io: Io, app: *App, rdr: *Io.Reader, curr_idx: usize) !CommandType {
+    const key = try input.KeyCode.parse(rdr) orelse return .no_op;
+    const max_idx = if (app.sequencer_samples.len == 0) 0 else app.sequencer_samples.len - 1;
+    const sample = &app.sequencer_samples[curr_idx];
+
+    try app.mu.lock(io);
+    defer app.mu.unlock(io);
+    switch (key) {
+        .left => app.mode = .{ .track = curr_idx -| 1 },
+        .right => app.mode = .{ .track = @min(curr_idx + 1, max_idx) },
+        .t => app.mode = .{ .explore = {} },
+        .@"1" => {
+            if (sample.*) |*s| {
+                s.pitch_offset -= 1.0;
+            }
+        },
+        .@"2" => {
+            if (sample.*) |*s| {
+                s.pitch_offset += 1.0;
+            }
+        },
+        .down => {
+            if (sample.*) |*s| {
+                s.gain_db -= 1.0;
+            }
+        },
+        .up => {
+            if (sample.*) |*s| {
+                s.gain_db += 1.0;
+            }
+        },
+        else => return .no_op,
+    }
+    return .key;
 }
 
 fn handleSearch(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
@@ -95,6 +133,18 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
     defer app.mu.unlock(io);
     var cmd_type: CommandType = .key;
     switch (key) {
+        // MODES
+        .back_slash => {
+            app.mode = .search;
+        },
+        .p => {
+            app.mode = .push;
+        },
+        .t => {
+            app.mode = .{ .track = 0 };
+            return .key;
+        },
+        // PARAMS
         .@"1" => {
             switch (app.active_param) {
                 .centroid => app.params.centroid.moveLeft(5),
@@ -127,14 +177,15 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
             }
             cmd_type = .fetch;
         },
-        // toggle order direction
-        .o => {
+        ////////////////
+        // FILTERs
+        ////////////////
+        .o => { // change order direction
             app.params.order_asc = !app.params.order_asc;
             app.page = 0;
             cmd_type = .fetch;
         },
-        // toggle order mode
-        .m => {
+        .m => { // toggle order mode
             app.params.order_by = switch (app.params.order_by) {
                 .width => .centroid,
                 .name => .width,
@@ -143,15 +194,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
             app.page = 0;
             cmd_type = .fetch;
         },
-        // UI CHANGES
-        .back_slash => {
-            app.mode = .search;
-        },
-        .p => {
-            app.mode = .push;
-        },
-        // reset
-        .r => {
+        .r => { // reset
             app.search_text.clearAndFree(gpa);
             app.pitch_semitones = 0;
             app.params = .{
@@ -160,8 +203,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
             app.page = 0;
             cmd_type = .fetch;
         },
-        // find similar
-        .s => {
+        .s => { // find similar
             if (app.currFile()) |curr| {
                 app.search_text.clearAndFree(gpa);
                 if (curr.centroid) |x| {
@@ -174,37 +216,38 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
                 cmd_type = .fetch;
             }
         },
-        // toggle active
-        .a => {
+        .a => { // toggle active
             app.active_param = switch (app.active_param) {
                 .centroid => .width,
                 .width => .pitch,
                 .pitch => .centroid,
             };
         },
-        // open selected
-        .y => {
+        .y => { // open selected
             const curr = app.currFile() orelse return .no_op;
-            try curr.revealFile(io);
+            try lib.revealFile(io, curr.fullpath);
+            for (app.sequencer_samples) |sample| {
+                if (sample) |s| {
+                    try lib.revealFile(io, s.fullpath);
+                }
+            }
         },
-        // cursor down
-        .down => {
+        ////////////////
+        // General
+        ////////////////
+        .down => { // cursor down
             if (app.next()) cmd_type = .fetch;
         },
-        // cursor up
-        .up => {
+        .up => { // cursor up
             if (app.prev()) cmd_type = .fetch;
         },
-        // page next
-        .right => {
+        .right => { // page next
             if (app.nextPage()) cmd_type = .fetch;
         },
-        // page prev
-        .left => {
+        .left => { // page prev
             if (app.prevPage()) cmd_type = .fetch;
         },
-        // play selected
-        .space => {
+        .space => { // play selected
             const sample = app.currFile() orelse return .no_op;
 
             assert(app.sequencer_samples.len > 0);
@@ -245,8 +288,18 @@ fn saveSound(gpa: Allocator, app: *App, idx: usize, sample: lib.SampleEntry) !vo
     const cstr = try gpa.dupeSentinel(u8, sample.fullpath, 0);
     defer gpa.free(cstr);
 
-    app.sequencer_samples[idx] = .{
+    const TARGET_LUFS = -14.0;
+    const amp = sample.ampToLufs(TARGET_LUFS);
+    const gain_db = lib.audio.ampToDb(f32, amp);
+
+    const seq_sample = &app.sequencer_samples[idx];
+    seq_sample.* = .{
+        .pitch_offset = 0,
+        .gain_db = gain_db,
         .fullpath = fullpath,
         .sound = try lib.ma.Sound.init(gpa, app.engine.ptr, cstr),
     };
+    assert(seq_sample.* != null);
+    seq_sample.*.?.pitch_offset = @floatFromInt(app.pitch_semitones);
+    seq_sample.*.?.sound.setGain(amp);
 }

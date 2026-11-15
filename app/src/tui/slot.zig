@@ -6,6 +6,8 @@ const lib = @import("lib");
 
 fullpath: []const u8,
 sound: lib.ma.Sound,
+gain_db: f32 = 0.0,
+pitch_offset: f32 = 0.0,
 
 const Self = @This();
 pub fn deinitOwned(self: Self, gpa: Allocator) void {

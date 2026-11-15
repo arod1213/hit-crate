@@ -13,6 +13,17 @@ pub const midi = @import("sys/coremidi.zig");
 pub const ma = @import("sys/miniaudio.zig");
 pub const db = @import("sys/sqlite.zig");
 
+test "submods" {
+    std.testing.refAllDecls(@This());
+}
+pub fn revealFile(io: Io, fullpath: []const u8) !void {
+    _ = try std.process.spawn(io, .{
+        .argv = &[_][]const u8{
+            "open", "-R", fullpath,
+        },
+    });
+}
+
 pub const SampleEntry = struct {
     fullpath: []const u8,
     basename: []const u8,
@@ -39,14 +50,6 @@ pub const SampleEntry = struct {
                 1;
         const avg = (rms_amp + lufs_amp + tp_amp) / 3;
         return @min(2, avg);
-    }
-
-    pub fn revealFile(self: Self, io: Io) !void {
-        _ = try std.process.spawn(io, .{
-            .argv = &[_][]const u8{
-                "open", "-R", self.fullpath,
-            },
-        });
     }
 };
 

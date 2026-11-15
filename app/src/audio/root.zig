@@ -300,3 +300,26 @@ test "lufs to target" {
 test "width comparison" {
     assert(widthCompare(0.0, 0.0) == 0.0);
 }
+
+test "mono frames" {
+    const bin_width = 4096;
+    const t = struct {
+        fn fuzzTest(_: void, smith: *std.testing.Smith) !void {
+            const sample_rate: usize = @intCast(smith.valueRangeAtMost(u32, 1, std.math.maxInt(u32)));
+            const ch: usize = @intCast(smith.valueRangeAtMost(u32, 1, std.math.maxInt(u32)));
+
+            var frames: [bin_width * 2]f32 = undefined;
+            for (0..bin_width * 2) |idx| {
+                const val = smith.valueRangeAtMost(i32, -1_000_000, 1_000_000);
+                frames[idx] = @floatFromInt(val);
+            }
+
+            const alloc = std.testing.allocator;
+            const mono_frames = try framesToMono(alloc, bin_width, &frames, sample_rate, ch);
+            alloc.free(mono_frames);
+
+            try std.testing.expect(mono_frames.len > 0);
+        }
+    };
+    try std.testing.fuzz({}, t.fuzzTest, .{});
+}

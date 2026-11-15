@@ -6,10 +6,11 @@ const assert = std.debug.assert;
 const lib = @import("lib");
 const Slot = @import("slot.zig");
 
-const Mode = enum {
+const Mode = union(enum) {
     search, // create search text
     explore, // look through list of samples
     push, // push selected sample to sequencer
+    track: usize,
 };
 const ActiveParam = enum { centroid, width, pitch };
 
@@ -28,7 +29,7 @@ midi_ctx: lib.midi.MidiCtx,
 params: lib.SearchParams,
 
 idx: usize,
-mode: Mode = .explore,
+mode: Mode = .{ .explore = {} },
 active_param: ActiveParam = .centroid,
 pitch_semitones: i32 = 0,
 target_lufs: f32 = -17.0,
