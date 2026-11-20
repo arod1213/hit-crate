@@ -2,6 +2,7 @@ const std = @import("std");
 const Io = std.Io;
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
+const builtin = @import("builtin");
 
 pub const midi = @import("coremidi");
 
@@ -133,15 +134,23 @@ fn eventCallback(pkt_list: [*c]const midi.MIDIPacketList, ref_ctx: ?*anyopaque, 
     if (count == 0) return;
     // const packet_len = pkt_list.*.packet.len;
 
-    var pck: *const midi.MIDIPacket = @ptrCast(&pkt_list.*.packet[0]);
+    var pck: PacketPtr = &pkt_list.*.packet[0];
     for (0..count) |_| {
         if (pck.length > 0) {
             parsePacket(ctx, pck.data[0..pck.length], @intCast(pck.timeStamp));
         }
-        const next = pck.MIDIPacketNext();
-        if (next == null) break;
-        pck = next;
+        pck = nextPacket(pck);
     }
+}
+
+// Align ptr on ARM vs x86
+const PacketPtr = *align(1) const midi.MIDIPacket;
+inline fn nextPacket(pkt: PacketPtr) PacketPtr {
+    var addr = @intFromPtr(&pkt.data) + pkt.length;
+    if (builtin.cpu.arch.isAARCH64() or builtin.cpu.arch.isArm()) {
+        addr = std.mem.alignForward(usize, addr, 4);
+    }
+    return @ptrFromInt(addr);
 }
 
 fn parsePacket(ctx: *MidiCtx, data: []const u8, timestamp: i96) void {

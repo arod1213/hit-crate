@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
     const coremidi = b.addTranslateC(.{
         .target = target,
         .optimize = optimize,
-        .root_source_file = b.path("./include/coremidi.h"),
+        .root_source_file = b.path("./vendor/coremidi.h"),
         .link_libc = false,
     });
     const coremidi_mod = coremidi.createModule();
@@ -23,12 +23,12 @@ pub fn build(b: *std.Build) void {
     const sqlite = b.addTranslateC(.{
         .target = target,
         .optimize = optimize,
-        .root_source_file = b.path("./include/sqlite3.h"),
+        .root_source_file = b.path("./vendor/sqlite3.h"),
         .link_libc = false,
     });
     const sqlite_mod = sqlite.createModule();
     sqlite_mod.addCSourceFile(.{
-        .file = b.path("include/sqlite3.c"),
+        .file = b.path("vendor/sqlite3.c"),
         .language = .c,
         .flags = &[_][]const u8{
             "-DSQLITE_ENABLE_FTS5",
@@ -36,37 +36,37 @@ pub fn build(b: *std.Build) void {
     });
 
     const kissfft = b.addTranslateC(.{
-        .root_source_file = b.path("include/kissfft/kiss_fft.h"),
+        .root_source_file = b.path("vendor/kissfft/kiss_fft.h"),
         .optimize = optimize,
         .target = target,
         .link_libc = true,
     });
     const kissfft_mod = kissfft.createModule();
     kissfft_mod.addCSourceFile(.{
-        .file = b.path("include/kissfft/kiss_fft.c"),
+        .file = b.path("vendor/kissfft/kiss_fft.c"),
     });
 
     const ebur128 = b.addTranslateC(.{
         .target = target,
         .optimize = optimize,
-        .root_source_file = b.path("./include/ebur128.h"),
+        .root_source_file = b.path("./vendor/ebur128.h"),
         .link_libc = false,
     });
     const ebur128_mod = ebur128.createModule();
     ebur128_mod.addCSourceFile(.{
-        .file = b.path("include/ebur128.c"),
+        .file = b.path("vendor/ebur128.c"),
         .language = .c,
     });
 
     const miniaudio = b.addTranslateC(.{
         .target = target,
         .optimize = optimize,
-        .root_source_file = b.path("./include/miniaudio.h"),
+        .root_source_file = b.path("./vendor/miniaudio.h"),
         .link_libc = false,
     });
     const miniaudio_mod = miniaudio.createModule();
     miniaudio_mod.addCSourceFile(.{
-        .file = b.path("include/miniaudio.c"),
+        .file = b.path("./vendor/miniaudio.c"),
         .language = .c,
     });
 
@@ -117,8 +117,15 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(exe);
 
+    // CLI flags
+    // const is_debug = b.option(bool, "debug", "Enable debug features") orelse false;
+    // const opt = b.addOptions();
+    // opt.addOption(bool, "debug", is_debug);
+    // exe.root_module.addOptions("opt", opt);
+
     const run_step = b.step("run", "Run the app");
     const run_cmd = b.addRunArtifact(exe);
+
     run_step.dependOn(&run_cmd.step);
     run_cmd.step.dependOn(b.getInstallStep());
     run_cmd.addPassthruArgs();

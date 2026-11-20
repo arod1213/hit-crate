@@ -49,15 +49,23 @@ fn renderLoop(io: Io, app: *App) !void {
 
     const sample = app.sequencer_samples[idx] orelse return;
     const amp = lib.audio.dbToAmp(f32, sample.gain_db);
+    const vel_amp = scaleVelocityToAmp(event.velocity, amp);
 
     try sample.sound.stop();
     try sample.sound.seek(0);
     sample.sound.setPitch(sample.pitch_offset);
-    sample.sound.setGain(amp);
+    sample.sound.setGain(vel_amp);
 
     const start_offset_frames = getSoundStartFrame(io, &app.engine, event.timestamp);
     sample.sound.ptr.set_start_time_in_pcm_frames(start_offset_frames);
     try sample.sound.play();
+}
+
+fn scaleVelocityToAmp(vel: u8, max_amp: f32) f32 {
+    assert(vel <= 127);
+    const pct = @as(f32, @floatFromInt(vel)) / 127.0;
+    assert(pct <= 1.0);
+    return max_amp * pct;
 }
 
 /// used to preserve jitter across inconsisent events

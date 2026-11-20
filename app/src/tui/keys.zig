@@ -135,10 +135,7 @@ fn handlePush(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
     };
     assert(idx < App.NUM_VOICES);
 
-    if (app.sequencer_samples[idx]) |sample| {
-        sample.deinitOwned(gpa);
-    }
-    try saveSound(gpa, app, idx, curr);
+    try clearAndSaveSound(gpa, app, idx, curr);
     return .key;
 }
 
@@ -269,7 +266,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
 
             assert(app.sequencer_samples.len > 0);
             const idx = app.sequencer_samples.len - 1;
-            try saveSound(
+            try clearAndSaveSound(
                 gpa,
                 app,
                 idx,
@@ -314,9 +311,8 @@ fn sendMidiPlay(io: Io, app: *const App, idx: usize) !void {
     );
 }
 
-fn saveSound(gpa: Allocator, app: *App, idx: usize, sample: lib.SampleEntry) !void {
+fn clearAndSaveSound(gpa: Allocator, app: *App, idx: usize, sample: lib.SampleEntry) !void {
     if (app.sequencer_samples[idx]) |*current| {
-        try current.sound.stop();
         current.deinitOwned(gpa);
     }
 

@@ -58,9 +58,10 @@ const Slider = struct {
     ceiling: f32, // MAX value
 
     exp_scale: f32, // 1 = no scaling, 0.9 slower ramping
-    tolerance_percent: f32, // 0.0 to 100.0
+    tolerance_percent: f32, // 0.0 to MAX_TOLERANCE
 
-    slider_pos_percent: f32, // 0.0 to 100.0
+    slider_pos_percent: f32, // 0.0 to MAX_TOLERANCE
+    const MAX_TOLERANCE = 50.0; // 50 in either direction
 
     const Self = @This();
     pub fn value(self: Self) f32 {
@@ -76,7 +77,8 @@ const Slider = struct {
         assert(range > 0);
         const move = x - self.floor;
         const res = std.math.pow(f32, move / range, 1.0 / self.exp_scale) * 100.0;
-        self.slider_pos_percent = res;
+
+        self.slider_pos_percent = @min(100.0, @min(0, res));
     }
 
     pub fn bound(self: Self, lower: bool) f32 {
@@ -94,17 +96,24 @@ const Slider = struct {
 
     pub fn moveTolerance(self: *Self, by: f32) void {
         const val = self.tolerance_percent + by;
-        self.tolerance_percent = @max(0.0, @min(100.0, val));
+        if (val > MAX_TOLERANCE) {
+            self.moveRight(5);
+        } else if (val < 0.0) {
+            self.moveLeft(5);
+        }
+        self.tolerance_percent = @max(0.0, @min(MAX_TOLERANCE, val));
     }
 
     pub fn moveRight(self: *Self, percent: f32) void {
         const val = self.slider_pos_percent + percent;
         self.slider_pos_percent = @min(100.0, val);
+        std.log.info("pos is {d}", .{self.slider_pos_percent});
     }
 
     pub fn moveLeft(self: *Self, percent: f32) void {
         const val = self.slider_pos_percent - percent;
         self.slider_pos_percent = @max(0, val);
+        std.log.info("pos is {d}", .{self.slider_pos_percent});
     }
 
     pub fn format(self: Self, w: *Io.Writer) !void {
@@ -135,16 +144,16 @@ pub const SearchParams = struct {
     width: Slider = .{
         .floor = 0,
         .ceiling = 200,
-        .slider_pos_percent = 0,
+        .slider_pos_percent = 50,
         .exp_scale = 1,
-        .tolerance_percent = 100,
+        .tolerance_percent = 50,
     },
     centroid: Slider = .{
         .floor = 0,
         .ceiling = 9_000,
-        .slider_pos_percent = 0,
+        .slider_pos_percent = 50,
         .exp_scale = 1,
-        .tolerance_percent = 100,
+        .tolerance_percent = 50,
     },
     order_by: OrderParams = .width,
     order_asc: bool = true,
