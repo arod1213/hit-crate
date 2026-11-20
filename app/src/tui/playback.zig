@@ -3,17 +3,18 @@ const Io = std.Io;
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 
-const Slot = @import("slot.zig");
 const lib = @import("lib");
 
 pub const App = @import("app.zig");
+pub const NUM_VOICES = App.NUM_VOICES;
+const Slot = @import("slot.zig");
+
 // NOTE: not needed yet, but could be nice for midi controller encoder controller
 // const sync = @import("sync.zig");
 // const CommandType = sync.CommandType;
 
 pub const SELECTED_PLAYBACK_CHAN = 15;
-pub const NUM_VOICES = App.NUM_VOICES;
-const ROOT_MIDI_NOTE = 60;
+pub const ROOT_MIDI_NOTE = 60;
 
 pub fn listen(io: Io, app: *App) void {
     while (true) {
@@ -49,6 +50,7 @@ fn renderLoop(io: Io, app: *App) !void {
     const sample = app.sequencer_samples[idx] orelse return;
     const amp = lib.audio.dbToAmp(f32, sample.gain_db);
 
+    try sample.sound.stop();
     try sample.sound.seek(0);
     sample.sound.setPitch(sample.pitch_offset);
     sample.sound.setGain(amp);

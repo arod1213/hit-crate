@@ -101,6 +101,7 @@ pub const KeyCode = enum(u8) {
     space,
     forward_slash,
     back_slash,
+    tab,
 
     pub fn parse(rdr: *Io.Reader) !?KeyCode {
         const b = try rdr.takeByte();
@@ -109,6 +110,7 @@ pub const KeyCode = enum(u8) {
             ' ' => return .space,
             '/' => return .forward_slash,
             '\\' => return .back_slash,
+            '\t' => return .tab,
             0x1B => {
                 if (rdr.bufferedLen() == 0) return null;
                 switch (try rdr.takeByte()) {

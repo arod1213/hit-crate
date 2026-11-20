@@ -44,9 +44,25 @@ fn handleTrack(io: Io, app: *App, rdr: *Io.Reader, curr_idx: usize) !CommandType
     try app.mu.lock(io);
     defer app.mu.unlock(io);
     switch (key) {
+        .space => {
+            const midi_shift = playback.ROOT_MIDI_NOTE +| curr_idx;
+            const midi_note: i32 = @max(
+                0,
+                @min(std.math.maxInt(u8), midi_shift),
+            );
+
+            try app.midi_ctx.queue.putOne(
+                io,
+                lib.midi.MidiEvent.noteOn(
+                    1, // chan
+                    @intCast(midi_note),
+                    Io.Clock.now(.awake, io).toNanoseconds(),
+                ),
+            );
+        },
         .left => app.mode = .{ .track = curr_idx -| 1 },
         .right => app.mode = .{ .track = @min(curr_idx + 1, max_idx) },
-        .t => app.mode = .{ .explore = {} },
+        .tab => app.mode = .{ .explore = {} },
         .@"1" => {
             if (sample.*) |*s| {
                 s.pitch_offset -= 1.0;
@@ -140,7 +156,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
         .p => {
             app.mode = .push;
         },
-        .t => {
+        .tab => {
             app.mode = .{ .track = 0 };
             return .key;
         },
@@ -195,7 +211,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
             cmd_type = .fetch;
         },
         .r => { // reset
-            app.search_text.clearAndFree(gpa);
+            app.resetSearch(gpa);
             app.pitch_semitones = 0;
             app.params = .{
                 .search_text = app.search_text.items,
@@ -205,7 +221,8 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
         },
         .s => { // find similar
             if (app.currFile()) |curr| {
-                app.search_text.clearAndFree(gpa);
+                app.resetSearch(gpa);
+
                 if (curr.centroid) |x| {
                     app.params.centroid.setValue(x) catch {};
                     app.params.centroid.tolerance_percent = 2;
@@ -260,7 +277,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
             );
             assert(app.sequencer_samples[idx] != null);
 
-            const midi_shift = 60 +| app.pitch_semitones;
+            const midi_shift = playback.ROOT_MIDI_NOTE +| app.pitch_semitones;
             const midi_note: i32 = @max(
                 0,
                 @min(std.math.maxInt(u8), midi_shift),
@@ -280,7 +297,29 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
     return cmd_type;
 }
 
+fn sendMidiPlay(io: Io, app: *const App, idx: usize) !void {
+    const midi_shift = 60 +| app.pitch_semitones;
+    const midi_note: i32 = @max(
+        0,
+        @min(std.math.maxInt(u8), midi_shift),
+    );
+
+    try app.midi_ctx.queue.putOne(
+        io,
+        lib.midi.MidiEvent.noteOn(
+            idx,
+            @intCast(midi_note),
+            Io.Clock.now(.awake, io).toNanoseconds(),
+        ),
+    );
+}
+
 fn saveSound(gpa: Allocator, app: *App, idx: usize, sample: lib.SampleEntry) !void {
+    if (app.sequencer_samples[idx]) |*current| {
+        try current.sound.stop();
+        current.deinitOwned(gpa);
+    }
+
     const fullpath = try gpa.dupe(u8, sample.fullpath);
     errdefer gpa.free(fullpath);
 

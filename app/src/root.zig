@@ -53,33 +53,6 @@ pub const SampleEntry = struct {
     }
 };
 
-// TODO: make this do exponential scaling so button press moves 5% in either direction (nice UX for TUI)
-// fn Slider(comptime exp_scale: f32, lower: f32, upper: f32) type {
-//     assert(lower <= upper);
-//     return struct {
-//         curr_percent: f32 = 0.0,
-//         value: f32 = lower,
-//         diff: f32 = upper - lower,
-//
-//         const SliderSelf = @This();
-//         pub fn setPos(self: SliderSelf, percent: f32) void {
-//             assert(percent >= 0.0);
-//             assert(percent <= 100.0);
-//
-//             const scale_percent = percent * exp_scale / 100;
-//             assert(scale_percent >= 0);
-//             assert(scale_percent <= 1.0);
-//             self.value = lower + (scale_percent * self.diff);
-//             self.curr_percent = percent;
-//         }
-//     };
-// }
-//
-// const Params = struct {
-//     width: Slider(1, 0, 200) = .{},
-//     centroid: Slider(0.2, 0, 9_000) = .{},
-// };
-
 const Slider = struct {
     floor: f32, // MIN value
     ceiling: f32, // MAX value
@@ -115,13 +88,6 @@ const Slider = struct {
         const percentile_bounded: f32 = @max(0.0, @min(100.0, percentile)) / 100.0;
         const scaled_percent = std.math.pow(f32, percentile_bounded, self.exp_scale);
 
-        // std.log.info("pos {d} tol {d} pct {d} bound {d} scaled {d}", .{
-        //     self.slider_pos_percent,
-        //     self.tolerance_percent,
-        //     percentile,
-        //     percentile_bounded,
-        //     scaled_percent,
-        // });
         const diff_change = scaled_percent * range;
         return self.floor + diff_change;
     }
@@ -142,7 +108,7 @@ const Slider = struct {
     }
 
     pub fn format(self: Self, w: *Io.Writer) !void {
-        _ = try w.print("{d} - {d}", .{
+        _ = try w.print("{d:.0} - {d:.0}", .{
             self.bound(true),
             self.bound(false),
         });

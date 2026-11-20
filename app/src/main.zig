@@ -189,7 +189,7 @@ fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *
                 .fetch => {
                     try app.mu.lock(io);
                     defer app.mu.unlock(io);
-                    _ = sample_list_arena.reset(.free_all);
+                    _ = sample_list_arena.reset(.retain_capacity);
                     app.samples = try lib.querySamples(sample_list_arena_alloc, conn, app.params, app.limit, app.page);
                 },
             }

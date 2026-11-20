@@ -4,6 +4,7 @@ const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 
 const lib = @import("lib");
+
 const Slot = @import("slot.zig");
 
 const Mode = union(enum) {
@@ -37,6 +38,11 @@ limit: usize,
 page: usize,
 
 const Self = @This();
+
+pub fn resetSearch(self: *Self, gpa: Allocator) void {
+    self.search_text.clearAndFree(gpa);
+    self.params.search_text = self.search_text.items;
+}
 
 pub fn setPitch(self: *Self, semitones: i32) void {
     const clipped = @max(-36, @min(36, semitones));
