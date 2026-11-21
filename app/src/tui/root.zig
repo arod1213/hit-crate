@@ -6,8 +6,9 @@ const lib = @import("lib");
 
 pub const App = @import("app.zig");
 pub const input = @import("input.zig");
-pub const playback = @import("playback.zig");
 pub const keys = @import("keys.zig");
+pub const kits = @import("kits.zig");
+pub const playback = @import("playback.zig");
 pub const sync = @import("sync.zig");
 
 pub const RenderDepth = enum { all, ui };
@@ -28,20 +29,32 @@ pub fn render(w: *Io.Writer, app: *const App) !void {
 fn renderTrack(w: *Io.Writer, app: *const App, idx: usize) !void {
     const sample = app.sequencer_samples[idx];
 
-    const path, const gain, const pitch = if (sample) |s| .{ s.fullpath, s.gain_db, s.pitch_offset } else .{ "no sample...", 0, 0 };
+    const path, const gain, const pitch, const offset_ms = if (sample) |s| .{
+        s.fullpath,
+        s.gain_db,
+        s.pitch_offset,
+        s.start_offset_ms,
+    } else .{
+        "no sample...",
+        0,
+        0,
+        0.0,
+    };
     _ = try w.write("\x1b[2J\x1b[H");
 
-    _ = try w.print("Slot {d}/{d}", .{ idx + 1, app.sequencer_samples.len });
+    _ = try w.print("slot {d}/{d}", .{ idx + 1, app.sequencer_samples.len });
     _ = try w.write(dim ++ " | " ++ reset);
-    _ = try w.print("Pitch {d:3.1}", .{pitch});
+    _ = try w.print("pitch {d:3.1}", .{pitch});
     _ = try w.write(dim ++ " | " ++ reset);
-    _ = try w.print("Gain {d:3.1}", .{gain});
+    _ = try w.print("gain {d:3.1}", .{gain});
+    _ = try w.write(dim ++ " | " ++ reset);
+    _ = try w.print("offset (ms) {d:2.1}", .{offset_ms});
     _ = try w.write("\n");
 
     const div: [60]u8 = @splat('-');
     _ = try w.print(dim ++ "{s}" ++ reset ++ "\n", .{&div});
 
-    _ = try w.print("Sample: {s}", .{std.fs.path.basename(path)});
+    _ = try w.print("sample: {s}", .{std.fs.path.basename(path)});
     _ = try w.write("\n");
 
     try w.flush();

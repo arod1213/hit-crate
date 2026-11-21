@@ -7,7 +7,9 @@ const lib = @import("lib");
 
 pub const App = @import("app.zig");
 pub const input = @import("input.zig");
+const kits = @import("kits.zig");
 pub const playback = @import("playback.zig");
+const Slot = @import("slot.zig");
 const sync = @import("sync.zig");
 const CommandType = sync.CommandType;
 
@@ -25,19 +27,42 @@ pub fn listen(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader, cmd_queue: *sy
     }
 }
 
+/// ensure reading occurs before mutex is acquired
 fn handleKey(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader, cmd_queue: *sync.CommandQueue) !void {
+    if (app.mode == .search) {
+        const byte = try rdr.takeByte();
+        const cmd = try handleSearch(io, gpa, app, byte);
+        try cmd_queue.putOne(io, cmd);
+        return;
+    }
+
+    const key = try input.KeyCode.parse(rdr) orelse .unknown;
+
+    // mutex on app acquired here
     const cmd_type: CommandType = switch (app.mode) {
-        .explore => try handleExplore(io, gpa, app, rdr),
-        .search => try handleSearch(io, gpa, app, rdr),
-        .push => try handlePush(io, gpa, app, rdr),
-        // else => unreachable,
-        .track => |idx| try handleTrack(io, app, rdr, idx),
+        .search => unreachable, // handled above
+        .explore => try handleExplore(io, gpa, app, key),
+        .push => try handlePush(io, gpa, app, key),
+        .track => |idx| try handleTrack(io, app, key, idx),
+        .kit_generate => try handleKit(io, gpa, app, key),
     };
     try cmd_queue.putOne(io, cmd_type);
 }
 
-fn handleTrack(io: Io, app: *App, rdr: *Io.Reader, curr_idx: usize) !CommandType {
-    const key = try input.KeyCode.parse(rdr) orelse return .no_op;
+fn handleKit(io: Io, gpa: Allocator, app: *App, key: input.KeyCode) !CommandType {
+    defer app.mode = .explore;
+
+    // lock is acquired in the generation
+    switch (key) {
+        .@"1" => try kits.generateKit(io, gpa, .default, app),
+        .@"2" => try kits.generateKit(io, gpa, .rnb, app),
+        .@"3" => try kits.generateKit(io, gpa, .rap, app),
+        else => try kits.generateKit(io, gpa, .default, app),
+    }
+    return .key;
+}
+
+fn handleTrack(io: Io, app: *App, key: input.KeyCode, curr_idx: usize) !CommandType {
     const max_idx = if (app.sequencer_samples.len == 0) 0 else app.sequencer_samples.len - 1;
     const sample = &app.sequencer_samples[curr_idx];
 
@@ -59,6 +84,18 @@ fn handleTrack(io: Io, app: *App, rdr: *Io.Reader, curr_idx: usize) !CommandType
                     Io.Clock.now(.awake, io).toNanoseconds(),
                 ),
             );
+        },
+        .period => {
+            if (app.sequencer_samples[curr_idx]) |*curr| {
+                const val = curr.start_offset_ms + 1;
+                curr.start_offset_ms = @min(200, val);
+            }
+        },
+        .comma => {
+            if (app.sequencer_samples[curr_idx]) |*curr| {
+                const val = curr.start_offset_ms - 1;
+                curr.start_offset_ms = @max(0.0, val);
+            }
         },
         .left => app.mode = .{ .track = curr_idx -| 1 },
         .right => app.mode = .{ .track = @min(curr_idx + 1, max_idx) },
@@ -88,9 +125,7 @@ fn handleTrack(io: Io, app: *App, rdr: *Io.Reader, curr_idx: usize) !CommandType
     return .key;
 }
 
-fn handleSearch(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
-    const b = try rdr.takeByte();
-
+fn handleSearch(io: Io, gpa: Allocator, app: *App, b: u8) !CommandType {
     try app.mu.lock(io);
     defer app.mu.unlock(io);
     switch (b) {
@@ -114,12 +149,9 @@ fn handleSearch(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandType
 }
 
 /// TODO: this curr value will be freed so needs a new alloc or to be copied
-fn handlePush(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
-    try app.mu.lock(io);
-    defer app.mu.unlock(io);
+fn handlePush(io: Io, gpa: Allocator, app: *App, key: input.KeyCode) !CommandType {
     defer app.mode = .explore; // leave mode
 
-    const key = try input.KeyCode.parse(rdr) orelse return .no_op;
     const curr = app.currFile() orelse return .no_op;
 
     const idx: u8 = switch (key) {
@@ -135,15 +167,16 @@ fn handlePush(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
     };
     assert(idx < App.NUM_VOICES);
 
-    try clearAndSaveSound(gpa, app, idx, curr);
+    try app.mu.lock(io);
+    defer app.mu.unlock(io);
+    try kits.clearAndSaveSound(gpa, app, idx, curr);
     return .key;
 }
 
-fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandType {
-    const key = try input.KeyCode.parse(rdr) orelse return .no_op;
-
+fn handleExplore(io: Io, gpa: Allocator, app: *App, key: input.KeyCode) !CommandType {
     try app.mu.lock(io);
     defer app.mu.unlock(io);
+
     var cmd_type: CommandType = .key;
     switch (key) {
         // MODES
@@ -152,6 +185,9 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
         },
         .p => {
             app.mode = .push;
+        },
+        .k => {
+            app.mode = .kit_generate;
         },
         .tab => {
             app.mode = .{ .track = 0 };
@@ -221,9 +257,13 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
                 app.resetSearch(gpa);
 
                 if (curr.centroid) |x| {
-                    app.params.centroid.setValue(x) catch {};
+                    std.log.info("centroid is {}", .{x});
+                    app.params.centroid.setValue(x) catch |e| {
+                        std.log.err("err setting value: {}", .{e});
+                    };
                     app.params.centroid.tolerance_percent = 2;
                 }
+                std.log.info("width is {}", .{curr.width});
                 app.params.width.setValue(curr.width) catch {};
                 app.params.width.tolerance_percent = 2;
                 app.page = 0;
@@ -266,7 +306,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, rdr: *Io.Reader) !CommandTyp
 
             assert(app.sequencer_samples.len > 0);
             const idx = app.sequencer_samples.len - 1;
-            try clearAndSaveSound(
+            try kits.clearAndSaveSound(
                 gpa,
                 app,
                 idx,
@@ -309,32 +349,4 @@ fn sendMidiPlay(io: Io, app: *const App, idx: usize) !void {
             Io.Clock.now(.awake, io).toNanoseconds(),
         ),
     );
-}
-
-fn clearAndSaveSound(gpa: Allocator, app: *App, idx: usize, sample: lib.SampleEntry) !void {
-    if (app.sequencer_samples[idx]) |*current| {
-        current.deinitOwned(gpa);
-    }
-
-    const fullpath = try gpa.dupe(u8, sample.fullpath);
-    errdefer gpa.free(fullpath);
-
-    // only needed to open miniaudio.sound
-    const cstr = try gpa.dupeSentinel(u8, sample.fullpath, 0);
-    defer gpa.free(cstr);
-
-    const TARGET_LUFS = -14.0;
-    const amp = sample.ampToLufs(TARGET_LUFS);
-    const gain_db = lib.audio.ampToDb(f32, amp);
-
-    const seq_sample = &app.sequencer_samples[idx];
-    seq_sample.* = .{
-        .pitch_offset = 0,
-        .gain_db = gain_db,
-        .fullpath = fullpath,
-        .sound = try lib.ma.Sound.init(gpa, app.engine.ptr, cstr),
-    };
-    assert(seq_sample.* != null);
-    seq_sample.*.?.pitch_offset = @floatFromInt(app.pitch_semitones);
-    seq_sample.*.?.sound.setGain(amp);
 }

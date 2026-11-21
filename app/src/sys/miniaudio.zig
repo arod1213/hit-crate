@@ -11,6 +11,7 @@ pub const Decoder = struct {
     in_ch: u32,
     out_ch: u32,
     format: ma.ma_format,
+
     const Self = @This();
     pub const MAX_CHANNELS = 8;
 
@@ -94,10 +95,8 @@ pub const Engine = struct {
 
 pub const Sound = struct {
     ptr: *ma.ma_sound,
-    // TODO: maybe add fullpath here to check for equality?
 
     const Self = @This();
-
     pub fn init(alloc: Allocator, engine: [*c]ma.ma_engine, path: [:0]const u8) !Self {
         assert(engine != null);
 
@@ -132,8 +131,14 @@ pub const Sound = struct {
     pub fn seek(self: Self, frame: u64) !void {
         if (self.ptr.seek_to_pcm_frame(frame) != ma.MA_SUCCESS) return error.FailedSeek;
     }
+    pub fn seekMs(self: Self, ms: f32) !void {
+        if (self.ptr.seek_to_second(ms / 1000) != ma.MA_SUCCESS) return error.FailedSeek;
+    }
 
     pub fn play(self: Self) !void {
+        ma.ma_sound_reset_stop_time(self.ptr);
+
+        _ = self.ptr.set_fade_in_milliseconds(0.0, 1.0, 3); // prevents clicks
         const res = self.ptr.start();
         if (res != ma.MA_SUCCESS) return error.NoPlay;
     }
@@ -144,12 +149,20 @@ pub const Sound = struct {
     }
 
     pub fn stop(self: Self) !void {
-        const res = self.ptr.stop();
+        const res = self.ptr.stop(); // hard stop
         if (res != ma.MA_SUCCESS) return error.NoStop;
     }
 
+    pub fn stopSmooth(self: Self, ms: u64) !void {
+        const res = self.ptr.stop_with_fade_in_milliseconds(ms);
+        if (res != ma.MA_SUCCESS) return error.NoStop;
+        while (self.ptr.is_playing() == ma.MA_TRUE) {
+            // wait
+        }
+    }
+
     pub fn deinit(self: Self, alloc: Allocator) void {
-        self.stop() catch {};
+        self.stopSmooth(2) catch {};
         self.ptr.uninit();
         alloc.destroy(self.ptr);
     }

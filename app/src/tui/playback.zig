@@ -16,6 +16,20 @@ const Slot = @import("slot.zig");
 pub const SELECTED_PLAYBACK_CHAN = 15;
 pub const ROOT_MIDI_NOTE = 60;
 
+// compute vel scaled values at comptime
+const vel_pow_table: [128]f32 = blk: {
+    const VEL_UNITY = 100;
+    const AMP_CLAMP = 1.1;
+    @setEvalBranchQuota(10_000);
+    var t: [128]f32 = undefined;
+    for (&t, 0..) |*scale, i| {
+        const pct = @as(f32, @floatFromInt(i)) / VEL_UNITY;
+        const scaled = std.math.pow(f32, pct, 1.1);
+        scale.* = @min(AMP_CLAMP, scaled);
+    }
+    break :blk t;
+};
+
 pub fn listen(io: Io, app: *App) void {
     while (true) {
         renderLoop(io, app) catch |e| {
@@ -47,12 +61,15 @@ fn renderLoop(io: Io, app: *App) !void {
         },
     };
 
+    try app.mu.lock(io);
+    defer app.mu.unlock(io);
+
     const sample = app.sequencer_samples[idx] orelse return;
     const amp = lib.audio.dbToAmp(f32, sample.gain_db);
-    const vel_amp = scaleVelocityToAmp(event.velocity, amp);
+    const vel_amp = amp * vel_pow_table[@intCast(event.velocity)];
 
-    try sample.sound.stop();
-    try sample.sound.seek(0);
+    try sample.sound.stopSmooth(1);
+    try sample.sound.seekMs(sample.start_offset_ms);
     sample.sound.setPitch(sample.pitch_offset);
     sample.sound.setGain(vel_amp);
 
@@ -65,7 +82,8 @@ fn scaleVelocityToAmp(vel: u8, max_amp: f32) f32 {
     assert(vel <= 127);
     const pct = @as(f32, @floatFromInt(vel)) / 127.0;
     assert(pct <= 1.0);
-    return max_amp * pct;
+    const pct_squared = std.math.pow(f32, pct, 1.5);
+    return max_amp * pct_squared;
 }
 
 /// used to preserve jitter across inconsisent events

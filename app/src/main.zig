@@ -4,7 +4,6 @@ const Allocator = std.mem.Allocator;
 
 const lib = @import("zigs");
 const db = lib.db;
-const opt = @import("opt");
 const tui = @import("tui");
 
 const Config = struct {
@@ -127,6 +126,7 @@ fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *
 
     var midi_buff: [80]lib.midi.MidiEvent = undefined;
     var app = tui.App{
+        .db_conn = conn,
         .limit = 10,
         .page = 0,
         .idx = 0,
@@ -154,7 +154,7 @@ fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *
     var sample_list_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer sample_list_arena.deinit();
     const sample_list_arena_alloc = sample_list_arena.allocator();
-    app.samples = try lib.querySamples(sample_list_arena_alloc, conn, app.params, app.limit, app.page);
+    app.samples = try lib.querySamples(sample_list_arena_alloc, app.db_conn, app.params, app.limit, app.page);
 
     ////////////////////////
     // PLAYBACK
@@ -195,7 +195,7 @@ fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *
                     try app.mu.lock(io);
                     defer app.mu.unlock(io);
                     _ = sample_list_arena.reset(.retain_capacity);
-                    app.samples = try lib.querySamples(sample_list_arena_alloc, conn, app.params, app.limit, app.page);
+                    app.samples = try lib.querySamples(sample_list_arena_alloc, app.db_conn, app.params, app.limit, app.page);
                 },
             }
             break;

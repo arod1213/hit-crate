@@ -32,28 +32,9 @@ pub const SampleEntry = struct {
     width: f32,
     true_peak: ?f32,
     centroid: ?f32,
-
-    const Self = @This();
-
-    pub fn ampToLufs(self: Self, target_lufs: f32) f32 {
-        const rms_amp =
-            audio.ampToTarget(f32, self.rms, target_lufs);
-        const lufs_amp =
-            if (self.lufs) |lufs|
-                audio.ampToTarget(f32, lufs, target_lufs)
-            else
-                1;
-        const tp_amp =
-            if (self.true_peak) |tp|
-                audio.ampToTarget(f32, tp, target_lufs)
-            else
-                1;
-        const avg = (rms_amp + lufs_amp + tp_amp) / 3;
-        return @min(2, avg);
-    }
 };
 
-const Slider = struct {
+pub const Slider = struct {
     floor: f32, // MIN value
     ceiling: f32, // MAX value
 
@@ -78,7 +59,7 @@ const Slider = struct {
         const move = x - self.floor;
         const res = std.math.pow(f32, move / range, 1.0 / self.exp_scale) * 100.0;
 
-        self.slider_pos_percent = @min(100.0, @min(0, res));
+        self.slider_pos_percent = @min(100.0, @max(0, res));
     }
 
     pub fn bound(self: Self, lower: bool) f32 {
@@ -107,13 +88,11 @@ const Slider = struct {
     pub fn moveRight(self: *Self, percent: f32) void {
         const val = self.slider_pos_percent + percent;
         self.slider_pos_percent = @min(100.0, val);
-        std.log.info("pos is {d}", .{self.slider_pos_percent});
     }
 
     pub fn moveLeft(self: *Self, percent: f32) void {
         const val = self.slider_pos_percent - percent;
         self.slider_pos_percent = @max(0, val);
-        std.log.info("pos is {d}", .{self.slider_pos_percent});
     }
 
     pub fn format(self: Self, w: *Io.Writer) !void {
@@ -141,6 +120,8 @@ pub const OrderParams = enum {
 
 pub const SearchParams = struct {
     search_text: []const u8,
+    /// unsupported for batch queries at the moment
+    duration_ms_max: u32 = 5_000,
     width: Slider = .{
         .floor = 0,
         .ceiling = 200,
@@ -215,4 +196,81 @@ pub fn querySamples(gpa: Allocator, conn: db.Connection, params: SearchParams, l
         try sample_list.append(gpa, sample);
     }
     return try sample_list.toOwnedSlice(gpa);
+}
+
+/// get one sample
+pub fn querySample(gpa: Allocator, conn: db.Connection, params: SearchParams) !?SampleEntry {
+    const duration_clause = "duration_ms <= ?6";
+    const sql =
+        if (params.search_text.len > 2)
+            try std.fmt.allocPrintSentinel(gpa,
+                \\ SELECT s.path, s.name, s.width, s.true_peak, s.rms, s.centroid
+                \\ FROM samples s
+                \\ JOIN samples_fts f on f.rowid = s.rowid
+                \\ WHERE f.name MATCH '"' || replace(?1, '"', '""') || '"'
+                \\ AND s.width BETWEEN ?2 and ?3
+                \\ AND s.centroid BETWEEN ?4 and ?5
+                \\ AND {s}
+                \\ LIMIT 1
+            , .{duration_clause}, 0)
+        else
+            try std.fmt.allocPrintSentinel(gpa,
+                \\ SELECT s.path, s.name, s.width, s.true_peak, s.rms, s.centroid
+                \\ FROM samples s
+                \\ WHERE ?1 IS NULL
+                \\ AND s.width BETWEEN ?2 and ?3
+                \\ AND s.centroid BETWEEN ?4 and ?5
+                \\ AND {s}
+                \\ LIMIT 1
+            , .{duration_clause}, 0);
+    defer gpa.free(sql);
+
+    const stmt = try db.prepare(conn, sql);
+    defer db.stmtClose(stmt) catch {};
+    try db.stmtBindMany(stmt, .{
+        if (params.search_text.len == 0) null else params.search_text,
+        params.width.bound(true),
+        params.width.bound(false),
+        params.centroid.bound(true),
+        params.centroid.bound(false),
+        params.duration_ms_max,
+    });
+
+    const res = try db.stmtStep(stmt);
+    if (res != .Row) return null;
+
+    var sample = std.mem.zeroes(SampleEntry);
+    try db.stmtReadMany(gpa, stmt, .{
+        &sample.fullpath,
+        &sample.basename,
+        &sample.width,
+        &sample.true_peak,
+        &sample.rms,
+        &sample.centroid,
+    });
+    return sample;
+}
+
+test "set value" {
+    const t = struct {
+        pub fn fuzzTest(_: void, smith: *std.testing.Smith) !void {
+            const FLOOR = 0;
+            const CEIL = 10_000;
+            var slider: Slider = .{
+                .ceiling = CEIL,
+                .floor = FLOOR,
+                .exp_scale = 1,
+                .tolerance_percent = 2,
+                .slider_pos_percent = 0,
+            };
+            const value = smith.valueRangeAtMost(u16, FLOOR, CEIL);
+            const float_value: f32 = @floatFromInt(value);
+            try slider.setValue(float_value);
+            const lower = slider.bound(true);
+            const upper = slider.bound(false);
+            try std.testing.expect(float_value >= lower);
+            try std.testing.expect(float_value <= upper);
+        }
+    };
+    try std.testing.fuzz({}, t.fuzzTest, .{});
 }

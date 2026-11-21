@@ -12,6 +12,7 @@ const Mode = union(enum) {
     explore, // look through list of samples
     push, // push selected sample to sequencer
     track: usize,
+    kit_generate, // create random kit
 };
 const ActiveParam = enum { centroid, width, pitch };
 
@@ -19,6 +20,7 @@ const ActiveParam = enum { centroid, width, pitch };
 pub const NUM_VOICES = 4 + 1;
 
 mu: Io.Mutex = .init,
+db_conn: lib.db.Connection,
 engine: lib.ma.Engine,
 // used to render list of matching samples
 samples: []lib.SampleEntry,
