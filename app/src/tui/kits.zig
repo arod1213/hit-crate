@@ -17,29 +17,40 @@ const KitType = enum(u8) {
 
 pub fn generateKit(io: Io, gpa: Allocator, kit: KitType, app: *App) !void {
     // must have at least voices for kick snare hat
-    assert(app.sequencer_samples.len > 3);
+    assert(app.sample_slots.slots.len > 3);
 
     const rand: std.Random.IoSource = .{ .io = io };
-    const rand_int = rand.interface().int(u8);
-    const rand_percent = @as(f32, @floatFromInt(rand_int)) / 100.0;
+    const rand_int = rand.interface().int(u16);
+    const rand_percent = @mod(
+        @as(f32, @floatFromInt(rand_int)),
+        100.0,
+    );
+    std.log.debug("rand is {d:.2}", .{rand_percent});
 
     const kick_centroid: lib.Slider = .{
         .floor = @min(1_500, app.params.centroid.floor),
-        .ceiling = 2_000,
+        .ceiling = 4_000,
         .exp_scale = 1,
         .tolerance_percent = 5,
         .slider_pos_percent = rand_percent,
     };
     const snare_centroid: lib.Slider = .{
-        .floor = 500,
-        .ceiling = @max(700, app.params.centroid.ceiling),
+        .floor = 200,
+        .ceiling = @max(300, app.params.centroid.ceiling),
+        .exp_scale = 1,
+        .tolerance_percent = 5,
+        .slider_pos_percent = rand_percent,
+    };
+    const rim_centroid: lib.Slider = .{
+        .floor = 400,
+        .ceiling = @max(500, app.params.centroid.ceiling),
         .exp_scale = 1,
         .tolerance_percent = 5,
         .slider_pos_percent = rand_percent,
     };
     const hat_centroid: lib.Slider = .{
-        .floor = 3_000,
-        .ceiling = 10_000,
+        .floor = 2_000,
+        .ceiling = 12_000,
         .exp_scale = 1,
         .tolerance_percent = 5,
         .slider_pos_percent = rand_percent,
@@ -75,15 +86,15 @@ pub fn generateKit(io: Io, gpa: Allocator, kit: KitType, app: *App) !void {
             .{
                 .search_text = "kick",
                 .width = app.params.width,
-                .centroid = app.params.centroid,
+                .centroid = kick_centroid,
                 .order_by = .centroid,
                 .order_asc = true,
             },
             .{
                 .search_text = "rim",
-                .duration_ms_max = 1000,
+                .duration_ms_max = 1_000,
                 .width = app.params.width,
-                .centroid = app.params.centroid,
+                .centroid = rim_centroid,
                 .order_by = .centroid,
                 .order_asc = false,
             },
@@ -100,7 +111,7 @@ pub fn generateKit(io: Io, gpa: Allocator, kit: KitType, app: *App) !void {
             .{
                 .search_text = "808",
                 .width = app.params.width,
-                .centroid = app.params.centroid,
+                .centroid = kick_centroid,
                 .order_by = .centroid,
                 .order_asc = true,
             },
@@ -108,7 +119,7 @@ pub fn generateKit(io: Io, gpa: Allocator, kit: KitType, app: *App) !void {
                 .search_text = "808 sn",
                 .duration_ms_max = 1000,
                 .width = app.params.width,
-                .centroid = app.params.centroid,
+                .centroid = snare_centroid,
                 .order_by = .centroid,
                 .order_asc = false,
             },
@@ -132,37 +143,33 @@ pub fn generateKit(io: Io, gpa: Allocator, kit: KitType, app: *App) !void {
     const snare = try lib.querySample(arena_alloc, app.db_conn, snare_params);
     const hat = try lib.querySample(arena_alloc, app.db_conn, hat_params);
 
-    try app.mu.lock(io);
-    defer app.mu.unlock(io);
     if (kick) |k| {
-        try clearAndSaveSound(gpa, app, 0, k);
+        try clearAndSaveSound(io, gpa, app, 0, k);
     }
     if (snare) |s| {
-        try clearAndSaveSound(gpa, app, 1, s);
+        try clearAndSaveSound(io, gpa, app, 1, s);
     }
     if (hat) |h| {
-        try clearAndSaveSound(gpa, app, 2, h);
+        try clearAndSaveSound(io, gpa, app, 2, h);
     }
 }
 
-pub fn clearAndSaveSound(gpa: Allocator, app: *App, idx: usize, sample: lib.SampleEntry) !void {
-    if (app.sequencer_samples[idx]) |*current| {
-        current.deinitOwned(gpa);
+pub fn clearAndSaveSound(io: Io, gpa: Allocator, app: *App, idx: usize, sample: lib.SampleEntry) !void {
+    // block cleanups past sound
+    {
+        try app.sample_slots.clearSlot(io, gpa, idx);
     }
 
-    const fullpath = try gpa.dupe(u8, sample.fullpath);
-    errdefer gpa.free(fullpath);
+    var slot = try Slot.fromSampleEntry(gpa, sample, app.engine.ptr);
 
-    // only needed to open miniaudio.sound
-    const cstr = try gpa.dupeSentinel(u8, sample.fullpath, 0);
-    defer gpa.free(cstr);
+    slot.pitch_offset = @floatFromInt(app.pitch_semitones);
+    const amp = slot.ampToLufs(app.target_lufs);
+    slot.gain_db = lib.audio.ampToDb(f32, amp);
+    slot.sound.setGain(amp);
 
-    const seq_sample = &app.sequencer_samples[idx];
-    seq_sample.* = try Slot.fromSampleEntry(gpa, sample, app.engine.ptr);
-    const amp = seq_sample.*.?.ampToLufs(app.target_lufs);
-
-    assert(seq_sample.* != null);
-    seq_sample.*.?.pitch_offset = @floatFromInt(app.pitch_semitones);
-    seq_sample.*.?.gain_db = lib.audio.ampToDb(f32, amp);
-    seq_sample.*.?.sound.setGain(amp);
+    _ = try app.sample_slots.replace(
+        io,
+        idx,
+        slot,
+    );
 }

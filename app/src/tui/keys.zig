@@ -63,11 +63,9 @@ fn handleKit(io: Io, gpa: Allocator, app: *App, key: input.KeyCode) !CommandType
 }
 
 fn handleTrack(io: Io, app: *App, key: input.KeyCode, curr_idx: usize) !CommandType {
-    const max_idx = if (app.sequencer_samples.len == 0) 0 else app.sequencer_samples.len - 1;
-    const sample = &app.sequencer_samples[curr_idx];
+    const num_voices = app.sample_slots.slots.len;
+    const max_idx = if (num_voices == 0) 0 else num_voices - 1;
 
-    try app.mu.lock(io);
-    defer app.mu.unlock(io);
     switch (key) {
         .space => {
             const midi_shift = playback.ROOT_MIDI_NOTE +| curr_idx;
@@ -86,13 +84,17 @@ fn handleTrack(io: Io, app: *App, key: input.KeyCode, curr_idx: usize) !CommandT
             );
         },
         .period => {
-            if (app.sequencer_samples[curr_idx]) |*curr| {
+            try app.sample_slots.mu.lock(io);
+            defer app.sample_slots.mu.unlock(io);
+            if (app.sample_slots.slots[curr_idx]) |*curr| {
                 const val = curr.start_offset_ms + 1;
                 curr.start_offset_ms = @min(200, val);
             }
         },
         .comma => {
-            if (app.sequencer_samples[curr_idx]) |*curr| {
+            try app.sample_slots.mu.lock(io);
+            defer app.sample_slots.mu.unlock(io);
+            if (app.sample_slots.slots[curr_idx]) |*curr| {
                 const val = curr.start_offset_ms - 1;
                 curr.start_offset_ms = @max(0.0, val);
             }
@@ -101,23 +103,31 @@ fn handleTrack(io: Io, app: *App, key: input.KeyCode, curr_idx: usize) !CommandT
         .right => app.mode = .{ .track = @min(curr_idx + 1, max_idx) },
         .tab => app.mode = .{ .explore = {} },
         .@"1" => {
-            if (sample.*) |*s| {
-                s.pitch_offset -= 1.0;
+            try app.sample_slots.mu.lock(io);
+            defer app.sample_slots.mu.unlock(io);
+            if (app.sample_slots.slots[curr_idx]) |*curr| {
+                curr.pitch_offset -= 1.0;
             }
         },
         .@"2" => {
-            if (sample.*) |*s| {
-                s.pitch_offset += 1.0;
+            try app.sample_slots.mu.lock(io);
+            defer app.sample_slots.mu.unlock(io);
+            if (app.sample_slots.slots[curr_idx]) |*curr| {
+                curr.pitch_offset += 1.0;
             }
         },
         .down => {
-            if (sample.*) |*s| {
-                s.gain_db -= 1.0;
+            try app.sample_slots.mu.lock(io);
+            defer app.sample_slots.mu.unlock(io);
+            if (app.sample_slots.slots[curr_idx]) |*curr| {
+                curr.gain_db -= 1.0;
             }
         },
         .up => {
-            if (sample.*) |*s| {
-                s.gain_db += 1.0;
+            try app.sample_slots.mu.lock(io);
+            defer app.sample_slots.mu.unlock(io);
+            if (app.sample_slots.slots[curr_idx]) |*curr| {
+                curr.gain_db += 1.0;
             }
         },
         else => return .no_op,
@@ -152,8 +162,6 @@ fn handleSearch(io: Io, gpa: Allocator, app: *App, b: u8) !CommandType {
 fn handlePush(io: Io, gpa: Allocator, app: *App, key: input.KeyCode) !CommandType {
     defer app.mode = .explore; // leave mode
 
-    const curr = app.currFile() orelse return .no_op;
-
     const idx: u8 = switch (key) {
         .@"1" => 0,
         .@"2" => 1,
@@ -169,7 +177,9 @@ fn handlePush(io: Io, gpa: Allocator, app: *App, key: input.KeyCode) !CommandTyp
 
     try app.mu.lock(io);
     defer app.mu.unlock(io);
-    try kits.clearAndSaveSound(gpa, app, idx, curr);
+    const curr = app.currFile() orelse return .no_op;
+
+    try kits.clearAndSaveSound(io, gpa, app, idx, curr);
     return .key;
 }
 
@@ -237,8 +247,7 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, key: input.KeyCode) !Command
         .m => { // toggle order mode
             app.params.order_by = switch (app.params.order_by) {
                 .width => .centroid,
-                .name => .width,
-                .centroid => .name,
+                .centroid => .width,
             };
             app.page = 0;
             cmd_type = .fetch;
@@ -280,7 +289,10 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, key: input.KeyCode) !Command
         .y => { // open selected
             const curr = app.currFile() orelse return .no_op;
             try lib.revealFile(io, curr.fullpath);
-            for (app.sequencer_samples) |sample| {
+            try app.sample_slots.mu.lock(io);
+            defer app.sample_slots.mu.unlock(io);
+
+            for (app.sample_slots.slots) |sample| {
                 if (sample) |s| {
                     try lib.revealFile(io, s.fullpath);
                 }
@@ -304,15 +316,15 @@ fn handleExplore(io: Io, gpa: Allocator, app: *App, key: input.KeyCode) !Command
         .space => { // play selected
             const sample = app.currFile() orelse return .no_op;
 
-            assert(app.sequencer_samples.len > 0);
-            const idx = app.sequencer_samples.len - 1;
+            assert(app.sample_slots.slots.len > 0);
+            const idx = app.sample_slots.slots.len - 1;
             try kits.clearAndSaveSound(
+                io,
                 gpa,
                 app,
                 idx,
                 sample,
             );
-            assert(app.sequencer_samples[idx] != null);
 
             const midi_shift = playback.ROOT_MIDI_NOTE +| app.pitch_semitones;
             const midi_note: i32 = @max(

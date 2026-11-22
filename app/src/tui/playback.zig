@@ -42,8 +42,6 @@ pub fn listen(io: Io, app: *App) void {
 }
 
 fn renderLoop(io: Io, app: *App) !void {
-    assert(app.sequencer_samples.len > 0);
-
     const event: lib.midi.MidiEvent = app.midi_ctx.queue.getOne(io) catch |e| {
         std.log.err("failed to get MIDI note {}", .{e});
         return e;
@@ -52,19 +50,20 @@ fn renderLoop(io: Io, app: *App) !void {
 
     const ch = event.channel();
     const idx: usize = switch (ch) {
-        SELECTED_PLAYBACK_CHAN => app.sequencer_samples.len - 1,
+        SELECTED_PLAYBACK_CHAN => app.sample_slots.slots.len - 1,
         else => blk: {
             if (event.note < ROOT_MIDI_NOTE) return error.NoteTooLow;
             const playback_note = event.note - ROOT_MIDI_NOTE;
-            if (playback_note >= app.sequencer_samples.len) return error.OutOfBounds; // out of bounds
+            if (playback_note >= app.sample_slots.slots.len) return error.OutOfBounds; // out of bounds
             break :blk @intCast(playback_note);
         },
     };
 
-    try app.mu.lock(io);
-    defer app.mu.unlock(io);
+    try app.sample_slots.mu.lock(io);
+    defer app.sample_slots.mu.unlock(io);
 
-    const sample = app.sequencer_samples[idx] orelse return;
+    const sample: *Slot = &(app.sample_slots.slots[idx] orelse return);
+
     const amp = lib.audio.dbToAmp(f32, sample.gain_db);
     const vel_amp = amp * vel_pow_table[@intCast(event.velocity)];
 

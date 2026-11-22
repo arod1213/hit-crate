@@ -147,11 +147,7 @@ fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *
     };
     defer {
         app.midi_ctx.queue.close(io);
-        for (app.sequencer_samples) |sample| {
-            if (sample) |s| {
-                s.deinitOwned(gpa);
-            }
-        }
+        app.sample_slots.deinit(io, gpa);
     }
 
     // shown samples
@@ -182,12 +178,7 @@ fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *
     // RENDERING
     ////////////////////////
     while (true) {
-        try app.mu.lock(io);
-        tui.render(wrt, &app) catch |e| {
-            app.mu.unlock(io);
-            return e;
-        };
-        app.mu.unlock(io);
+        try tui.render(io, wrt, &app);
 
         // only loops if no_ops are sent
         while (true) {

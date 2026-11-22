@@ -107,7 +107,7 @@ pub const Slider = struct {
 pub const OrderParams = enum {
     centroid,
     width,
-    name,
+
     const Self = @This();
     pub fn asClause(self: Self, order_asc: bool) []const u8 {
         return switch (self) {

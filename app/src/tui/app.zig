@@ -5,7 +5,7 @@ const assert = std.debug.assert;
 
 const lib = @import("lib");
 
-const Slot = @import("slot.zig");
+const Slots = @import("slot_list.zig");
 
 const Mode = union(enum) {
     search, // create search text
@@ -19,13 +19,14 @@ const ActiveParam = enum { centroid, width, pitch };
 // add +1 for selected track output
 pub const NUM_VOICES = 4 + 1;
 
+/// used for samples + general UI
 mu: Io.Mutex = .init,
 db_conn: lib.db.Connection,
 engine: lib.ma.Engine,
 // used to render list of matching samples
 samples: []lib.SampleEntry,
 // used for drum kit playback
-sequencer_samples: [NUM_VOICES]?Slot = std.mem.zeroes([NUM_VOICES]?Slot),
+sample_slots: Slots.init(NUM_VOICES) = .{},
 
 search_text: std.ArrayList(u8),
 midi_ctx: lib.midi.MidiCtx,
@@ -89,9 +90,4 @@ pub fn currFile(self: Self) ?lib.SampleEntry {
     if (self.samples.len == 0) return null;
     if (self.idx >= self.samples.len) return null;
     return self.samples[self.idx];
-}
-
-pub fn sequencerSample(self: Self, idx: usize) ?Slot {
-    if (idx >= self.sequencer_samples.len) return null;
-    return self.sequencer_samples[idx];
 }
