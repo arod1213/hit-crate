@@ -124,7 +124,7 @@ pub fn generateKit(io: Io, gpa: Allocator, kit: KitType, app: *App) !void {
     };
 
     // used only to free results from db query
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
     const arena_alloc = arena.allocator();
 

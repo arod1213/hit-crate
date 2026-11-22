@@ -8,11 +8,17 @@ pub const Wave = extern struct {
 
     const Self = @This();
 
-    pub fn fromFilePath(io: Io, fullpath: []const u8) !Self {
-        var file = try Io.Dir.openFileAbsolute(io, fullpath, .{
-            .mode = .read_only,
-        });
+    pub fn fromFilePath(io: Io, path: []const u8) !Self {
+        var file = if (std.fs.path.isAbsolute(path))
+            try Io.Dir.openFileAbsolute(io, path, .{
+                .mode = .read_only,
+            })
+        else
+            try Io.Dir.openFile(Io.Dir.cwd(), io, path, .{
+                .mode = .read_only,
+            });
         defer file.close(io);
+
         return Self.fromFile(io, &file);
     }
 

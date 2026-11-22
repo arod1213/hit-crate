@@ -84,7 +84,11 @@ pub fn main(init: std.process.Init) !void {
             defer db.close(conn);
             try db.migrate(conn);
 
-            try lib.scanner.saveDir(io, path, conn);
+            const CPU_THREADS = std.Thread.getCpuCount() catch 2;
+            var thread = std.Io.Threaded.init(init.gpa, .{ .async_limit = .limited(CPU_THREADS) });
+            defer thread.deinit();
+
+            try lib.scanner.saveDir(thread.io(), init.gpa, path, conn);
         },
         .read => {
             var use_midi = false;
@@ -151,7 +155,7 @@ fn read(io: Io, gpa: Allocator, conn: lib.db.Connection, rdr: *Io.Reader, wrt: *
     }
 
     // shown samples
-    var sample_list_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var sample_list_arena = std.heap.ArenaAllocator.init(gpa);
     defer sample_list_arena.deinit();
     const sample_list_arena_alloc = sample_list_arena.allocator();
     app.samples = try lib.querySamples(sample_list_arena_alloc, app.db_conn, app.params, app.limit, app.page);

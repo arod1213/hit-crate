@@ -14,6 +14,17 @@ pub fn migrate(conn: Connection) !void {
     try exec(conn, migration_file);
 }
 
+pub fn connectMemory() !Connection {
+    var db: Connection = null;
+    const res = sqlite.sqlite3_open(":memory:", &db);
+    if (res != sqlite.SQLITE_OK) {
+        std.log.err("failed db open: {d}", .{res});
+        return error.FailedOpen;
+    }
+    assert(db != null);
+    return db;
+}
+
 pub fn connect(url: [:0]const u8, read_only: bool) !Connection {
     var db: Connection = null;
     const flag = if (read_only) sqlite.SQLITE_OPEN_READONLY else sqlite.SQLITE_OPEN_READWRITE | sqlite.SQLITE_OPEN_CREATE;
@@ -125,9 +136,9 @@ pub fn stmtRead(comptime T: type, alloc: Allocator, stmt: Statement, idx: usize)
         },
         .float, .comptime_float => return @floatCast(sqlite.sqlite3_column_double(stmt, index)),
         .int, .comptime_int => return if (T == i64 or T == u64)
-            sqlite.sqlite3_column_int64(stmt, index)
+            @intCast(sqlite.sqlite3_column_int64(stmt, index))
         else
-            sqlite.sqlite3_column_int(stmt, index),
+            @intCast(sqlite.sqlite3_column_int(stmt, index)),
         else => @panic("unsupported data type"),
     }
 }
@@ -245,4 +256,9 @@ pub fn stmtClose(stmt: Statement) !void {
         std.log.err("failed finalize: {d}", .{res});
         return error.FailedClose;
     }
+}
+
+test "db migration" {
+    const conn = try connectMemory();
+    try migrate(conn);
 }
